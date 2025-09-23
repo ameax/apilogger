@@ -6,6 +6,7 @@ namespace Ameax\ApiLogger;
 
 use Ameax\ApiLogger\Commands\ApiLoggerCommand;
 use Ameax\ApiLogger\Contracts\StorageInterface;
+use Ameax\ApiLogger\Services\DataSanitizer;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -51,6 +52,18 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
      */
     protected function registerBindings(): void
     {
+        // Register the StorageManager singleton
+        $this->app->scoped(StorageManager::class, function ($app) {
+            return new StorageManager($app);
+        });
+
+        // Register the DataSanitizer singleton
+        $this->app->singleton(DataSanitizer::class, function ($app) {
+            return new DataSanitizer(
+                config: $app['config']->get('apilogger', []),
+            );
+        });
+
         // Register the main ApiLogger singleton
         $this->app->singleton(ApiLogger::class, function ($app) {
             return new ApiLogger(
@@ -58,19 +71,16 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
             );
         });
 
-        // Register storage interface binding (will be implemented in Phase 2)
-        // For now, we'll prepare the binding structure
+        // Register storage interface binding to use StorageManager
         $this->app->bind(StorageInterface::class, function ($app) {
-            $driver = config('apilogger.storage.driver', 'database');
-
-            // Storage implementations will be added in Phase 2
-            // This is a placeholder that will be replaced
-            return match ($driver) {
-                'database' => null, // Will be: new DatabaseStorage(...)
-                'jsonline' => null, // Will be: new JsonLineStorage(...)
-                default => throw new \InvalidArgumentException("Unknown storage driver: {$driver}"),
-            };
+            return $app->make(StorageManager::class)->store();
         });
+
+        // Register 'apilogger.storage' alias for StorageManager
+        $this->app->alias(StorageManager::class, 'apilogger.storage');
+
+        // Register 'apilogger.sanitizer' alias for DataSanitizer
+        $this->app->alias(DataSanitizer::class, 'apilogger.sanitizer');
     }
 
     /**
@@ -83,6 +93,10 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
         return [
             ApiLogger::class,
             StorageInterface::class,
+            StorageManager::class,
+            DataSanitizer::class,
+            'apilogger.storage',
+            'apilogger.sanitizer',
         ];
     }
 }
