@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace Ameax\ApiLogger\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class ApiLoggerCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'apilogger';
 
     public $description = 'My command';
 
