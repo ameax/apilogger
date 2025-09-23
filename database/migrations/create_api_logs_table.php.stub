@@ -21,7 +21,7 @@ return new class extends Migration
 
             // Request details
             $table->string('method', 10);
-            $table->text('endpoint');
+            $table->string('endpoint', 255); // Standard string length, indexable
             $table->json('request_headers')->nullable();
             $table->json('request_body')->nullable();
 
