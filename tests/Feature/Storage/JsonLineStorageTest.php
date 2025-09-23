@@ -96,10 +96,12 @@ describe('JsonLineStorage', function () {
         $lines = File::lines($filepath)->filter(fn($line) => trim($line) !== '')->values();
         expect($lines->count())->toBe(2);
 
-        $firstLine = json_decode($lines[0], true);
+        // Convert LazyCollection to array to access by index
+        $linesArray = $lines->toArray();
+        $firstLine = json_decode($linesArray[0], true);
         expect($firstLine['request_id'])->toBe('batch-1');
 
-        $secondLine = json_decode($lines[1], true);
+        $secondLine = json_decode($linesArray[1], true);
         expect($secondLine['request_id'])->toBe('batch-2');
     });
 
@@ -366,7 +368,8 @@ describe('JsonLineStorage', function () {
 
         $remaining = $this->storage->retrieve();
         expect($remaining)->toHaveCount(2);
-        expect($remaining->pluck('request_id')->toArray())->toContain('recent-normal', 'recent-error');
+        $requestIds = $remaining->map(fn($entry) => $entry->getRequestId())->toArray();
+        expect($requestIds)->toContain('recent-normal', 'recent-error');
     });
 
     test('can count entries with criteria', function () {
@@ -519,6 +522,7 @@ describe('JsonLineStorage', function () {
 
         // Should only retrieve valid entries
         expect($entries)->toHaveCount(2);
-        expect($entries->pluck('request_id')->toArray())->toContain('valid-1', 'valid-2');
+        $requestIds = $entries->map(fn($entry) => $entry->getRequestId())->toArray();
+        expect($requestIds)->toContain('valid-1', 'valid-2');
     });
 });

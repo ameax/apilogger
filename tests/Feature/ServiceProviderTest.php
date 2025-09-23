@@ -52,4 +52,4 @@ it('throws exception for unknown storage driver', function () {
     Config::set('apilogger.storage.driver', 'invalid');
 
     $this->app->make(StorageInterface::class);
-})->throws(InvalidArgumentException::class, 'Unknown storage driver: invalid');
+})->throws(InvalidArgumentException::class, 'Storage [invalid] is not defined.');

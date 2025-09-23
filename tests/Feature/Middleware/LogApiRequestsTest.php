@@ -240,21 +240,51 @@ it('handles exceptions during request processing', function () {
         ->toThrow(\RuntimeException::class, 'Something went wrong');
 });
 
-it('implements circuit breaker pattern for storage failures', function () {
+it('circuit breaker opens after threshold failures', function () {
+    $middleware = new LogApiRequests(
+        app(StorageManager::class),
+        app(\Ameax\ApiLogger\Services\DataSanitizer::class),
+        app(\Ameax\ApiLogger\Services\FilterService::class),
+        app(\Ameax\ApiLogger\Services\RequestCapture::class),
+        app(\Ameax\ApiLogger\Services\ResponseCapture::class),
+        config('apilogger')
+    );
+
+    $reflection = new \ReflectionClass($middleware);
+
+    // Check initial state
+    $method = $reflection->getMethod('isCircuitBreakerOpen');
+    $method->setAccessible(true);
+    expect($method->invoke($middleware))->toBeFalse();
+
+    // Set failure count to threshold
+    $failureCountProperty = $reflection->getProperty('failureCount');
+    $failureCountProperty->setAccessible(true);
+    $failureCountProperty->setValue($middleware, 5);
+
+    $circuitBreakerOpenProperty = $reflection->getProperty('circuitBreakerOpen');
+    $circuitBreakerOpenProperty->setAccessible(true);
+    $circuitBreakerOpenProperty->setValue($middleware, true);
+
+    $circuitBreakerOpenedAtProperty = $reflection->getProperty('circuitBreakerOpenedAt');
+    $circuitBreakerOpenedAtProperty->setAccessible(true);
+    $circuitBreakerOpenedAtProperty->setValue($middleware, microtime(true));
+
+    // Check circuit breaker is now open
+    expect($method->invoke($middleware))->toBeTrue();
+});
+
+it('circuit breaker prevents storage after threshold failures', function () {
+    // Create mocked dependencies first
     $storageManager = Mockery::mock(StorageManager::class);
     $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
 
+    // Storage should never be called because circuit breaker will be open
+    $storage->shouldNotReceive('store');
+    // But driver might be called (it's called before the circuit breaker check in storeWithTimeout)
     $storageManager->shouldReceive('driver')->andReturn($storage);
 
-    // First 5 calls will fail and open the circuit breaker
-    $storage->shouldReceive('store')
-        ->atMost()
-        ->times(5)
-        ->andThrow(new \Exception('Storage failed'));
-
-    app()->instance(StorageManager::class, $storageManager);
-
-    // Create a single middleware instance to preserve state
+    // Create middleware with mocked storage
     $middleware = new LogApiRequests(
         $storageManager,
         app(\Ameax\ApiLogger\Services\DataSanitizer::class),
@@ -264,9 +294,82 @@ it('implements circuit breaker pattern for storage failures', function () {
         config('apilogger')
     );
 
+    // Simulate circuit breaker being open
+    $reflection = new \ReflectionClass($middleware);
+
+    $failureCountProperty = $reflection->getProperty('failureCount');
+    $failureCountProperty->setAccessible(true);
+    $failureCountProperty->setValue($middleware, 5);
+
+    $circuitBreakerOpenProperty = $reflection->getProperty('circuitBreakerOpen');
+    $circuitBreakerOpenProperty->setAccessible(true);
+    $circuitBreakerOpenProperty->setValue($middleware, true);
+
+    $circuitBreakerOpenedAtProperty = $reflection->getProperty('circuitBreakerOpenedAt');
+    $circuitBreakerOpenedAtProperty->setAccessible(true);
+    $circuitBreakerOpenedAtProperty->setValue($middleware, microtime(true));
+
+    // Allow Log calls
+    Log::spy();
+
+    $request = Request::create('/api/test', 'GET');
+    $next = function ($req) {
+        return new Response('OK', 200);
+    };
+
+    $response = $middleware->handle($request, $next);
+    expect($response->getStatusCode())->toBe(200);
+});
+
+it('implements circuit breaker pattern for storage failures', function () {
+    // Ensure logging is enabled
+    config(['apilogger.enabled' => true]);
+    config(['apilogger.level' => 'full']);
+    config(['apilogger.performance.use_queue' => false]);
+    // Clear any filters that might block logging
+    config(['apilogger.filters.min_response_time' => 0]);
+    config(['apilogger.filters.exclude_routes' => []]);
+    config(['apilogger.filters.include_routes' => []]);
+    $storageManager = Mockery::mock(StorageManager::class);
+    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+
+    // Allow driver to be called
+    $storageManager->shouldReceive('driver')->andReturn($storage);
+
+    // Expect exactly 5 calls to store for the first 5 requests
+    // The 6th request should NOT call store because circuit breaker opens after 5th failure
+    $callCount = 0;
+    $storage->shouldReceive('store')
+        ->andReturnUsing(function () use (&$callCount) {
+            $callCount++;
+            // Always throw for testing circuit breaker
+            throw new \Exception('Storage failed ' . $callCount);
+        });
+
+    // Allow Log calls
+    Log::spy();
+
+    app()->instance(StorageManager::class, $storageManager);
+
+    // Create a single middleware instance to preserve state with the mocked storage
+    // Pass full config to ensure everything is set up correctly
+    $config = config('apilogger');
+    $config['enabled'] = true;
+    $config['level'] = 'full';
+    $config['performance']['use_queue'] = false;
+
+    $middleware = new LogApiRequests(
+        $storageManager, // Use mocked storage manager
+        app(\Ameax\ApiLogger\Services\DataSanitizer::class),
+        app(\Ameax\ApiLogger\Services\FilterService::class),
+        app(\Ameax\ApiLogger\Services\RequestCapture::class),
+        app(\Ameax\ApiLogger\Services\ResponseCapture::class),
+        $config
+    );
+
     // Send 5 requests that will fail
     for ($i = 0; $i < 5; $i++) {
-        $request = Request::create('/api/test', 'GET');
+        $request = Request::create('/api/test-' . $i, 'GET');
         $next = function ($req) {
             return new Response('OK', 200);
         };
@@ -274,17 +377,39 @@ it('implements circuit breaker pattern for storage failures', function () {
         $middleware->handle($request, $next);
     }
 
+    // Verify store was called
+    expect($callCount)->toBeGreaterThan(0);
+
+    // Check circuit breaker state after 5 failures
+    $reflection = new \ReflectionClass($middleware);
+    $circuitBreakerOpenProperty = $reflection->getProperty('circuitBreakerOpen');
+    $circuitBreakerOpenProperty->setAccessible(true);
+    $isOpen = $circuitBreakerOpenProperty->getValue($middleware);
+
+    $failureCountProperty = $reflection->getProperty('failureCount');
+    $failureCountProperty->setAccessible(true);
+    $failureCount = $failureCountProperty->getValue($middleware);
+
+    expect($failureCount)->toBe(5);
+    expect($isOpen)->toBeTrue();
+
     // After 5 failures, circuit breaker should be open
     // Next request should not attempt to store
-    $request = Request::create('/api/test', 'GET');
+    $request = Request::create('/api/test-after-circuit-open', 'GET');
     $next = function ($req) {
         return new Response('OK', 200);
     };
 
-    $middleware->handle($request, $next);
+    // This should not call store because circuit breaker is open
+    $response = $middleware->handle($request, $next);
+    expect($response->getStatusCode())->toBe(200);
 
-    // Verify circuit breaker is working by checking it didn't call store again
-    // The mock will fail if store is called more than 5 times
+    // Check final state
+    $isOpenAfter = $circuitBreakerOpenProperty->getValue($middleware);
+    expect($isOpenAfter)->toBeTrue();
+
+    // Verify that store was called exactly 5 times (not 6)
+    expect($callCount)->toBe(5);
 });
 
 it('does not log when disabled', function () {

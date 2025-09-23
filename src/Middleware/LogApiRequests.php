@@ -188,9 +188,6 @@ class LogApiRequests
 
             // Store the log entry
             $this->store($logEntry);
-
-            // Reset failure count on success
-            $this->failureCount = 0;
         } catch (\Throwable $e) {
             $this->handleStorageFailure($e);
         }
@@ -257,6 +254,15 @@ class LogApiRequests
      */
     protected function store(LogEntry $logEntry): void
     {
+        // Check circuit breaker status first
+        if ($this->isCircuitBreakerOpen()) {
+            Log::debug('Circuit breaker is open, skipping storage', [
+                'request_id' => $logEntry->getRequestId(),
+                'failure_count' => $this->failureCount,
+            ]);
+            return; // Skip storage if circuit breaker is open
+        }
+
         // Check if we should use queue
         if ($this->shouldUseQueue()) {
             // Dispatch to queue
@@ -292,6 +298,9 @@ class LogApiRequests
 
         if (! $stored || $elapsed > $timeout) {
             $this->handleStorageFailure($exception ?? new \RuntimeException('Storage operation timed out'));
+        } else {
+            // Reset failure count on success
+            $this->failureCount = 0;
         }
     }
 
@@ -319,6 +328,7 @@ class LogApiRequests
         Log::warning('API logger storage failed', [
             'exception' => $exception->getMessage(),
             'failure_count' => $this->failureCount,
+            'circuit_breaker_open' => $this->circuitBreakerOpen,
         ]);
 
         // Open circuit breaker if threshold reached

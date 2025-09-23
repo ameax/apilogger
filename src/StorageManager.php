@@ -91,10 +91,12 @@ class StorageManager extends Manager
     /**
      * Create an instance of the database storage driver.
      *
-     * @param  array<string, mixed>  $config
+     * @param  array<string, mixed>|null  $config
      */
-    protected function createDatabaseDriver(array $config): StorageInterface
+    protected function createDatabaseDriver(?array $config = null): StorageInterface
     {
+        $config = $config ?? $this->getConfig('database');
+
         return new DatabaseStorage(
             $this->container->make('db'),
             array_merge(
@@ -107,10 +109,12 @@ class StorageManager extends Manager
     /**
      * Create an instance of the JSON Lines storage driver.
      *
-     * @param  array<string, mixed>  $config
+     * @param  array<string, mixed>|null  $config
      */
-    protected function createJsonlineDriver(array $config): StorageInterface
+    protected function createJsonlineDriver(?array $config = null): StorageInterface
     {
+        $config = $config ?? $this->getConfig('jsonline');
+
         return new JsonLineStorage($config);
     }
 
