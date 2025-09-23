@@ -1,10 +1,18 @@
 {
     "name": "ameax/apilogger",
-    "description": "This is my package apilogger",
+    "description": "Powerful API request/response logging package for Laravel with multiple storage backends, privacy-first data sanitization, and performance optimization",
     "keywords": [
         "ameax",
         "laravel",
-        "apilogger"
+        "apilogger",
+        "api",
+        "logging",
+        "monitoring",
+        "request-logging",
+        "response-logging",
+        "api-monitoring",
+        "middleware",
+        "performance"
     ],
     "homepage": "https://github.com/ameax/apilogger",
     "license": "MIT",
