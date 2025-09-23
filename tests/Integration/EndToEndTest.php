@@ -42,6 +42,7 @@ it('logs API requests end-to-end through the full stack', function () {
     $response = $middleware->handle($request, function ($req) {
         // Add a small delay to ensure response time is captured
         usleep(10000); // 10ms
+
         return new Response(json_encode(['id' => 1, 'name' => 'John Doe']), 201, [
             'Content-Type' => 'application/json',
         ]);
@@ -91,7 +92,7 @@ it('handles high-volume concurrent requests', function () {
 
     // Simulate concurrent requests
     for ($i = 0; $i < $requestCount; $i++) {
-        $request = Request::create('/api/test/' . $i, 'GET');
+        $request = Request::create('/api/test/'.$i, 'GET');
 
         $middleware->handle($request, function ($req) {
             return new Response('OK', 200);
@@ -131,20 +132,21 @@ it('correctly filters requests based on configuration', function () {
 
     // Request that should be excluded by route
     $request1 = Request::create('/health', 'GET');
-    $middleware->handle($request1, fn($req) => new Response('OK'));
+    $middleware->handle($request1, fn ($req) => new Response('OK'));
 
     // Request that should be excluded by method
     $request2 = Request::create('/api/test', 'OPTIONS');
-    $middleware->handle($request2, fn($req) => new Response('OK'));
+    $middleware->handle($request2, fn ($req) => new Response('OK'));
 
     // Request that should be excluded by response time (fast request)
     $request3 = Request::create('/api/fast', 'GET');
-    $middleware->handle($request3, fn($req) => new Response('OK'));
+    $middleware->handle($request3, fn ($req) => new Response('OK'));
 
     // Request that should be logged (slow request)
     $request4 = Request::create('/api/slow', 'GET');
     $middleware->handle($request4, function ($req) {
         usleep(60000); // 60ms delay
+
         return new Response('OK');
     });
 
@@ -167,7 +169,7 @@ it('handles different content types correctly', function () {
     $jsonRequest->headers->set('Content-Type', 'application/json');
     $jsonRequest->setJson(['key' => 'value']);
 
-    $middleware->handle($jsonRequest, fn($req) => new Response(json_encode(['success' => true]), 200, [
+    $middleware->handle($jsonRequest, fn ($req) => new Response(json_encode(['success' => true]), 200, [
         'Content-Type' => 'application/json',
     ]));
 
@@ -178,7 +180,7 @@ it('handles different content types correctly', function () {
     ]);
     $formRequest->headers->set('Content-Type', 'application/x-www-form-urlencoded');
 
-    $middleware->handle($formRequest, fn($req) => new Response('Form submitted'));
+    $middleware->handle($formRequest, fn ($req) => new Response('Form submitted'));
 
     // File upload request
     $fileRequest = Request::create('/api/upload', 'POST');
@@ -191,7 +193,7 @@ it('handles different content types correctly', function () {
         true
     ));
 
-    $middleware->handle($fileRequest, fn($req) => new Response('File uploaded'));
+    $middleware->handle($fileRequest, fn ($req) => new Response('File uploaded'));
 
     // Verify all requests were logged
     expect(ApiLog::count())->toBe(3);
@@ -205,7 +207,7 @@ it('handles different content types correctly', function () {
 it('maintains data integrity across storage backends', function () {
     // Test data consistency when using multiple storage drivers
     $testData = [
-        'request_id' => 'integrity-test-' . uniqid(),
+        'request_id' => 'integrity-test-'.uniqid(),
         'method' => 'POST',
         'endpoint' => '/api/integrity',
         'request_body' => ['complex' => ['nested' => ['data' => 'structure']]],

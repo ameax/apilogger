@@ -10,8 +10,6 @@ use Ameax\ApiLogger\Storage\DatabaseStorage;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
-use Mockery;
 
 uses(RefreshDatabase::class);
 

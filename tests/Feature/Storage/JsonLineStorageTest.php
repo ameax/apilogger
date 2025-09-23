@@ -93,7 +93,7 @@ describe('JsonLineStorage', function () {
         $filename = 'api-'.Carbon::now()->format('Y-m-d').'.jsonl';
         $filepath = $this->storagePath.'/'.$filename;
 
-        $lines = File::lines($filepath)->filter(fn($line) => trim($line) !== '')->values();
+        $lines = File::lines($filepath)->filter(fn ($line) => trim($line) !== '')->values();
         expect($lines->count())->toBe(2);
 
         // Convert LazyCollection to array to access by index
@@ -368,7 +368,7 @@ describe('JsonLineStorage', function () {
 
         $remaining = $this->storage->retrieve();
         expect($remaining)->toHaveCount(2);
-        $requestIds = $remaining->map(fn($entry) => $entry->getRequestId())->toArray();
+        $requestIds = $remaining->map(fn ($entry) => $entry->getRequestId())->toArray();
         expect($requestIds)->toContain('recent-normal', 'recent-error');
     });
 
@@ -522,7 +522,7 @@ describe('JsonLineStorage', function () {
 
         // Should only retrieve valid entries
         expect($entries)->toHaveCount(2);
-        $requestIds = $entries->map(fn($entry) => $entry->getRequestId())->toArray();
+        $requestIds = $entries->map(fn ($entry) => $entry->getRequestId())->toArray();
         expect($requestIds)->toContain('valid-1', 'valid-2');
     });
 });

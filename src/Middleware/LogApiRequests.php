@@ -260,6 +260,7 @@ class LogApiRequests
                 'request_id' => $logEntry->getRequestId(),
                 'failure_count' => $this->failureCount,
             ]);
+
             return; // Skip storage if circuit breaker is open
         }
 

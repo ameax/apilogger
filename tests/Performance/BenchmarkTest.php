@@ -35,7 +35,7 @@ it('has minimal performance overhead', function () {
     $withMiddlewareStart = microtime(true);
     for ($i = 0; $i < $iterations; $i++) {
         $request = Request::create('/api/test', 'GET');
-        $middleware->handle($request, fn($req) => new Response('OK', 200));
+        $middleware->handle($request, fn ($req) => new Response('OK', 200));
     }
     $withMiddlewareTime = (microtime(true) - $withMiddlewareStart) * 1000;
 
@@ -63,9 +63,9 @@ it('handles batch operations efficiently', function () {
     // Create a large batch of log entries
     for ($i = 0; $i < 500; $i++) {
         $entries->push(new \Ameax\ApiLogger\DataTransferObjects\LogEntry(
-            requestId: 'batch-' . $i,
+            requestId: 'batch-'.$i,
             method: 'GET',
-            endpoint: '/api/batch/' . $i,
+            endpoint: '/api/batch/'.$i,
             requestHeaders: [],
             requestBody: null,
             responseCode: 200,
@@ -93,9 +93,9 @@ it('efficiently cleans old logs', function () {
 
     for ($i = 0; $i < 1000; $i++) {
         $log = ApiLog::create([
-            'request_id' => 'old-' . $i,
+            'request_id' => 'old-'.$i,
             'method' => 'GET',
-            'endpoint' => '/api/old/' . $i,
+            'endpoint' => '/api/old/'.$i,
             'response_code' => $i % 5 === 0 ? 500 : 200, // 20% errors
             'response_time_ms' => rand(10, 100),
         ]);
@@ -123,9 +123,9 @@ it('retrieves logs with criteria efficiently', function () {
     // Populate database with diverse logs
     for ($i = 0; $i < 1000; $i++) {
         ApiLog::create([
-            'request_id' => 'retrieve-' . $i,
+            'request_id' => 'retrieve-'.$i,
             'method' => $i % 3 === 0 ? 'POST' : 'GET',
-            'endpoint' => '/api/' . ($i % 10 === 0 ? 'users' : 'posts'),
+            'endpoint' => '/api/'.($i % 10 === 0 ? 'users' : 'posts'),
             'response_code' => $i % 10 === 0 ? 404 : 200,
             'response_time_ms' => rand(10, 500),
             'user_identifier' => $i % 5 === 0 ? 'user-1' : 'user-2',
@@ -168,9 +168,9 @@ it('handles concurrent writes without data loss', function () {
     // Simulate concurrent writes
     for ($i = 0; $i < $concurrentWrites; $i++) {
         $entry = new \Ameax\ApiLogger\DataTransferObjects\LogEntry(
-            requestId: 'concurrent-' . $i,
+            requestId: 'concurrent-'.$i,
             method: 'GET',
-            endpoint: '/api/concurrent/' . $i,
+            endpoint: '/api/concurrent/'.$i,
             requestHeaders: [],
             requestBody: null,
             responseCode: 200,
@@ -194,7 +194,7 @@ it('handles concurrent writes without data loss', function () {
     // Clean up
     $path = storage_path('logs/api-concurrent');
     if (is_dir($path)) {
-        array_map('unlink', glob($path . '/*.jsonl'));
+        array_map('unlink', glob($path.'/*.jsonl'));
         rmdir($path);
     }
 });
@@ -211,12 +211,12 @@ it('maintains acceptable memory usage', function () {
 
     // Process many requests
     for ($i = 0; $i < 100; $i++) {
-        $request = Request::create('/api/memory-test/' . $i, 'POST');
+        $request = Request::create('/api/memory-test/'.$i, 'POST');
         $request->setJson([
             'data' => str_repeat('x', 1000), // 1KB of data
         ]);
 
-        $middleware->handle($request, fn($req) => new Response(
+        $middleware->handle($request, fn ($req) => new Response(
             json_encode(['result' => str_repeat('y', 1000)]),
             200,
             ['Content-Type' => 'application/json']

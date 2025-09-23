@@ -247,7 +247,7 @@ class ResponseCapture
 
             foreach ($array as $key => $value) {
                 // If it's an array of items, truncate it
-                if (is_array($value) && !empty($value) && isset($value[0])) {
+                if (is_array($value) && ! empty($value) && isset($value[0])) {
                     $truncatedItems = [];
                     $itemSize = 0;
 
@@ -264,7 +264,7 @@ class ResponseCapture
 
                     $result[$key] = $truncatedItems;
                     if (count($value) > count($truncatedItems)) {
-                        $result['_truncated_at'] = $key . '[' . count($truncatedItems) . ']';
+                        $result['_truncated_at'] = $key.'['.count($truncatedItems).']';
                     }
                 } elseif (is_string($value) && strlen($value) > 100) {
                     $result[$key] = substr($value, 0, 100).'...';

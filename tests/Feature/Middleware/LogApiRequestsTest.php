@@ -343,7 +343,7 @@ it('implements circuit breaker pattern for storage failures', function () {
         ->andReturnUsing(function () use (&$callCount) {
             $callCount++;
             // Always throw for testing circuit breaker
-            throw new \Exception('Storage failed ' . $callCount);
+            throw new \Exception('Storage failed '.$callCount);
         });
 
     // Allow Log calls
@@ -369,7 +369,7 @@ it('implements circuit breaker pattern for storage failures', function () {
 
     // Send 5 requests that will fail
     for ($i = 0; $i < 5; $i++) {
-        $request = Request::create('/api/test-' . $i, 'GET');
+        $request = Request::create('/api/test-'.$i, 'GET');
         $next = function ($req) {
             return new Response('OK', 200);
         };
