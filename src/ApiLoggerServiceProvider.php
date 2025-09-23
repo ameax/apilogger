@@ -6,7 +6,13 @@ namespace Ameax\ApiLogger;
 
 use Ameax\ApiLogger\Commands\ApiLoggerCommand;
 use Ameax\ApiLogger\Contracts\StorageInterface;
+use Ameax\ApiLogger\Middleware\LogApiRequests;
 use Ameax\ApiLogger\Services\DataSanitizer;
+use Ameax\ApiLogger\Services\FilterService;
+use Ameax\ApiLogger\Services\RequestCapture;
+use Ameax\ApiLogger\Services\ResponseCapture;
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Routing\Router;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -44,7 +50,8 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
      */
     public function packageBooted(): void
     {
-        // Additional boot logic can be added here
+        // Register middleware
+        $this->registerMiddleware();
     }
 
     /**
@@ -64,9 +71,42 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
             );
         });
 
+        // Register the FilterService singleton
+        $this->app->singleton(FilterService::class, function ($app) {
+            return new FilterService(
+                config: $app['config']->get('apilogger', []),
+            );
+        });
+
+        // Register the RequestCapture singleton
+        $this->app->singleton(RequestCapture::class, function ($app) {
+            return new RequestCapture(
+                config: $app['config']->get('apilogger', []),
+            );
+        });
+
+        // Register the ResponseCapture singleton
+        $this->app->singleton(ResponseCapture::class, function ($app) {
+            return new ResponseCapture(
+                config: $app['config']->get('apilogger', []),
+            );
+        });
+
         // Register the main ApiLogger singleton
         $this->app->singleton(ApiLogger::class, function ($app) {
             return new ApiLogger(
+                config: $app['config']->get('apilogger', []),
+            );
+        });
+
+        // Register the LogApiRequests middleware
+        $this->app->scoped(LogApiRequests::class, function ($app) {
+            return new LogApiRequests(
+                storageManager: $app->make(StorageManager::class),
+                sanitizer: $app->make(DataSanitizer::class),
+                filterService: $app->make(FilterService::class),
+                requestCapture: $app->make(RequestCapture::class),
+                responseCapture: $app->make(ResponseCapture::class),
                 config: $app['config']->get('apilogger', []),
             );
         });
@@ -76,11 +116,36 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
             return $app->make(StorageManager::class)->store();
         });
 
-        // Register 'apilogger.storage' alias for StorageManager
+        // Register aliases
         $this->app->alias(StorageManager::class, 'apilogger.storage');
-
-        // Register 'apilogger.sanitizer' alias for DataSanitizer
         $this->app->alias(DataSanitizer::class, 'apilogger.sanitizer');
+        $this->app->alias(FilterService::class, 'apilogger.filter');
+        $this->app->alias(RequestCapture::class, 'apilogger.request');
+        $this->app->alias(ResponseCapture::class, 'apilogger.response');
+        $this->app->alias(LogApiRequests::class, 'apilogger.middleware');
+    }
+
+    /**
+     * Register the package middleware.
+     */
+    protected function registerMiddleware(): void
+    {
+        // Get the router
+        $router = $this->app->make(Router::class);
+
+        // Register middleware alias
+        $router->aliasMiddleware('api.logger', LogApiRequests::class);
+
+        // Optionally add to global middleware if configured
+        if (config('apilogger.middleware.global', false)) {
+            $kernel = $this->app->make(Kernel::class);
+            $kernel->pushMiddleware(LogApiRequests::class);
+        }
+
+        // Optionally add to API middleware group if configured
+        if (config('apilogger.middleware.api_group', true)) {
+            $router->pushMiddlewareToGroup('api', LogApiRequests::class);
+        }
     }
 
     /**
@@ -95,8 +160,16 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
             StorageInterface::class,
             StorageManager::class,
             DataSanitizer::class,
+            FilterService::class,
+            RequestCapture::class,
+            ResponseCapture::class,
+            LogApiRequests::class,
             'apilogger.storage',
             'apilogger.sanitizer',
+            'apilogger.filter',
+            'apilogger.request',
+            'apilogger.response',
+            'apilogger.middleware',
         ];
     }
 }

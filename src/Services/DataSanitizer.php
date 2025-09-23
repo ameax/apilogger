@@ -131,15 +131,18 @@ class DataSanitizer
         $sanitized = [];
 
         foreach ($data as $key => $value) {
+            // Convert numeric keys to string for checking
+            $keyStr = (string) $key;
+
             // Check if field should be excluded
-            if ($this->shouldExcludeField($key)) {
+            if ($this->shouldExcludeField($keyStr)) {
                 $sanitized[$key] = $this->redactedPlaceholder;
 
                 continue;
             }
 
             // Check if field should be masked
-            if ($this->shouldMaskField($key)) {
+            if ($this->shouldMaskField($keyStr)) {
                 $sanitized[$key] = $this->maskValue($value);
 
                 continue;
@@ -172,7 +175,8 @@ class DataSanitizer
 
         $sanitized = $this->sanitizeArray($array);
 
-        return (object) $sanitized;
+        // Convert back to object recursively
+        return json_decode(json_encode($sanitized));
     }
 
     /**
@@ -181,23 +185,24 @@ class DataSanitizer
     protected function shouldExcludeField(string $field): bool
     {
         $field = strtolower($field);
+        $snakeField = Str::snake($field);
 
         foreach ($this->excludeFields as $excludeField) {
             $excludeField = strtolower($excludeField);
+            $excludeSnake = Str::snake($excludeField);
 
-            // Exact match
-            if ($field === $excludeField) {
+            // Exact match (case-insensitive)
+            if ($field === $excludeField || $snakeField === $excludeSnake) {
                 return true;
             }
 
             // Check if field contains the exclude pattern
-            if (str_contains($field, $excludeField)) {
+            if (str_contains($field, $excludeField) || str_contains($snakeField, $excludeSnake)) {
                 return true;
             }
 
-            // Check snake_case variations
-            $snakeField = Str::snake($field);
-            if ($snakeField === $excludeField || str_contains($snakeField, $excludeField)) {
+            // Check for camelCase to snake_case conversion match
+            if ($snakeField === $excludeField || $field === str_replace('_', '', $excludeField)) {
                 return true;
             }
         }
@@ -211,23 +216,24 @@ class DataSanitizer
     protected function shouldMaskField(string $field): bool
     {
         $field = strtolower($field);
+        $snakeField = Str::snake($field);
 
         foreach ($this->maskFields as $maskField) {
             $maskField = strtolower($maskField);
+            $maskSnake = Str::snake($maskField);
 
-            // Exact match
-            if ($field === $maskField) {
+            // Exact match (case-insensitive)
+            if ($field === $maskField || $snakeField === $maskSnake) {
                 return true;
             }
 
             // Check if field contains the mask pattern
-            if (str_contains($field, $maskField)) {
+            if (str_contains($field, $maskField) || str_contains($snakeField, $maskSnake)) {
                 return true;
             }
 
-            // Check snake_case variations
-            $snakeField = Str::snake($field);
-            if ($snakeField === $maskField || str_contains($snakeField, $maskField)) {
+            // Check for camelCase to snake_case conversion match
+            if ($snakeField === $maskField || $field === str_replace('_', '', $maskField)) {
                 return true;
             }
         }

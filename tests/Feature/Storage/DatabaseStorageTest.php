@@ -383,8 +383,10 @@ describe('DatabaseStorage', function () {
         expect($stats['total_entries'])->toBe(3);
         expect($stats['total_errors'])->toBe(2);
         expect($stats['total_success'])->toBe(1);
-        expect($stats['max_response_time'])->toBe(150.0);
-        expect($stats['min_response_time'])->toBe(25.0);
+        expect($stats['max_response_time'])->toBeNumeric();
+        expect((float) $stats['max_response_time'])->toBe(150.0);
+        expect($stats['min_response_time'])->toBeNumeric();
+        expect((float) $stats['min_response_time'])->toBe(25.0);
         expect($stats['storage_type'])->toBe('database');
         expect($stats['status_groups']['2xx'])->toBe(1);
         expect($stats['status_groups']['4xx'])->toBe(1);

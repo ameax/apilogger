@@ -93,8 +93,8 @@ describe('JsonLineStorage', function () {
         $filename = 'api-'.Carbon::now()->format('Y-m-d').'.jsonl';
         $filepath = $this->storagePath.'/'.$filename;
 
-        $lines = File::lines($filepath);
-        expect(count($lines))->toBe(2);
+        $lines = File::lines($filepath)->filter(fn($line) => trim($line) !== '')->values();
+        expect($lines->count())->toBe(2);
 
         $firstLine = json_decode($lines[0], true);
         expect($firstLine['request_id'])->toBe('batch-1');
@@ -366,7 +366,7 @@ describe('JsonLineStorage', function () {
 
         $remaining = $this->storage->retrieve();
         expect($remaining)->toHaveCount(2);
-        expect($remaining->pluck('requestId')->toArray())->toContain('recent-normal', 'recent-error');
+        expect($remaining->pluck('request_id')->toArray())->toContain('recent-normal', 'recent-error');
     });
 
     test('can count entries with criteria', function () {
@@ -519,6 +519,6 @@ describe('JsonLineStorage', function () {
 
         // Should only retrieve valid entries
         expect($entries)->toHaveCount(2);
-        expect($entries->pluck('requestId')->toArray())->toContain('valid-1', 'valid-2');
+        expect($entries->pluck('request_id')->toArray())->toContain('valid-1', 'valid-2');
     });
 });

@@ -142,6 +142,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Middleware Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure how the logging middleware is registered.
+    |
+    */
+    'middleware' => [
+        // Add to global middleware stack
+        'global' => env('API_LOGGER_MIDDLEWARE_GLOBAL', false),
+
+        // Add to 'api' middleware group
+        'api_group' => env('API_LOGGER_MIDDLEWARE_API_GROUP', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Filtering Configuration
     |--------------------------------------------------------------------------
     |
@@ -189,6 +205,9 @@ return [
 
         // Minimum response time to log (milliseconds, 0 = log all)
         'min_response_time' => env('API_LOGGER_MIN_RESPONSE_TIME', 0),
+
+        // Always log errors (4xx, 5xx) regardless of other filters
+        'always_log_errors' => env('API_LOGGER_ALWAYS_LOG_ERRORS', true),
     ],
 
     /*

@@ -55,14 +55,15 @@ class StorageManager extends Manager
      */
     protected function resolve($name): StorageInterface
     {
+        // Check for custom creators first
+        if (isset($this->customCreators[$name])) {
+            return $this->callCustomCreator($name);
+        }
+
         $config = $this->getConfig($name);
 
         if (is_null($config)) {
             throw new \InvalidArgumentException("Storage [{$name}] is not defined.");
-        }
-
-        if (isset($this->customCreators[$name])) {
-            return $this->callCustomCreator($name);
         }
 
         $driverMethod = 'create'.ucfirst($name).'Driver';
@@ -82,7 +83,7 @@ class StorageManager extends Manager
      */
     protected function callCustomCreator($driver)
     {
-        $config = $this->getConfig($driver);
+        $config = $this->getConfig($driver) ?? [];
 
         return $this->customCreators[$driver]($this->container, $config);
     }

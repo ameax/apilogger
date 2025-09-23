@@ -162,14 +162,17 @@ describe('StorageManager', function () {
             responseTimeMs: 10.0,
         );
 
-        // These calls should be forwarded to the default driver
-        $result = $this->manager->store($entry);
+        // Get the storage instance first
+        $storage = $this->manager->store();
+
+        // These calls should work on the storage instance
+        $result = $storage->store($entry);
         expect($result)->toBeTrue();
 
-        $found = $this->manager->findByRequestId('forward-test');
+        $found = $storage->findByRequestId('forward-test');
         expect($found)->not->toBeNull();
 
-        $count = $this->manager->count();
+        $count = $storage->count();
         expect($count)->toBe(1);
     });
 

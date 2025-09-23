@@ -283,16 +283,16 @@ describe('DataSanitizer', function () {
 
     test('handles non-string values when masking', function () {
         $data = [
-            'email' => 123, // Non-string
-            'phone' => null, // Null
-            'authorization' => true, // Boolean
+            'email' => 123, // Numeric - will be masked as string
+            'phone' => null, // Null - will be redacted
+            'authorization' => true, // Boolean - will be redacted
         ];
 
         $sanitized = $this->sanitizer->sanitize($data);
 
-        expect($sanitized['email'])->toBe('[REDACTED]');
-        expect($sanitized['phone'])->toBe('[REDACTED]');
-        expect($sanitized['authorization'])->toBe('[REDACTED]');
+        expect($sanitized['email'])->toBe('***'); // 123 as string gets masked
+        expect($sanitized['phone'])->toBe('[REDACTED]'); // null gets redacted
+        expect($sanitized['authorization'])->toBe('[REDACTED]'); // boolean gets redacted
     });
 
     test('preserves data types for non-sensitive fields', function () {

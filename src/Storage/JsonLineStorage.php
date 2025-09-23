@@ -75,7 +75,7 @@ class JsonLineStorage implements StorageInterface
             $filepath = $this->basePath.DIRECTORY_SEPARATOR.$filename;
 
             // Build batch content
-            $content = $groupEntries->map(fn (LogEntry $entry) => $entry->toJson())->join(PHP_EOL).PHP_EOL;
+            $content = $groupEntries->map(fn (LogEntry $entry) => $entry->toJson().PHP_EOL)->join('');
 
             if ($this->writeToFile($filepath, $content)) {
                 $stored += $groupEntries->count();

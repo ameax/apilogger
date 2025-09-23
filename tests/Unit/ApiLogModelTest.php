@@ -9,13 +9,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
-    // Run the migration manually since it's a stub file
-    $migrationFile = __DIR__.'/../../database/migrations/create_api_logs_table.php.stub';
-    $migration = require $migrationFile;
-    $migration->up();
-});
-
 it('creates an ApiLog model with correct attributes', function () {
 
     $log = ApiLog::create([

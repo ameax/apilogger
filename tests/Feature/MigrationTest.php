@@ -7,13 +7,6 @@ use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
-    // Run the migration manually since it's a stub file
-    $migrationFile = __DIR__.'/../../database/migrations/create_api_logs_table.php.stub';
-    $migration = require $migrationFile;
-    $migration->up();
-});
-
 it('runs the migration', function () {
     expect(Schema::hasTable('api_logs'))->toBeTrue();
 });
