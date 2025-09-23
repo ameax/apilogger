@@ -2,9 +2,9 @@
 
 namespace Ameax\ApiLogger\Tests;
 
+use Ameax\ApiLogger\ApiLoggerServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Ameax\ApiLogger\ApiLoggerServiceProvider;
 
 class TestCase extends Orchestra
 {
@@ -28,10 +28,19 @@ class TestCase extends Orchestra
     {
         config()->set('database.default', 'testing');
 
-        /*
-         foreach (\Illuminate\Support\Facades\File::allFiles(__DIR__ . '/database/migrations') as $migration) {
-            (include $migration->getRealPath())->up();
-         }
-         */
+        // SQLite in-memory database for testing
+        config()->set('database.connections.testing', [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => '',
+        ]);
+
+        // Load package configuration
+        config()->set('apilogger', require __DIR__.'/../config/apilogger.php');
+    }
+
+    protected function defineDatabaseMigrations()
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
     }
 }
