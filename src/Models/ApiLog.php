@@ -24,6 +24,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $ip_address
  * @property string|null $user_agent
  * @property array|null $metadata
+ * @property string|null $comment
+ * @property bool $is_marked
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -55,6 +57,8 @@ class ApiLog extends Model
         'ip_address',
         'user_agent',
         'metadata',
+        'comment',
+        'is_marked',
     ];
 
     /**
@@ -70,6 +74,7 @@ class ApiLog extends Model
         'metadata' => 'array',
         'response_time_ms' => 'float',
         'response_code' => 'integer',
+        'is_marked' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -196,6 +201,40 @@ class ApiLog extends Model
     public function scopeOlderThan(Builder $query, int $days): Builder
     {
         return $query->where('created_at', '<', Carbon::now()->subDays($days));
+    }
+
+    /**
+     * Scope for marked logs.
+     */
+    public function scopeMarked(Builder $query): Builder
+    {
+        return $query->where('is_marked', true);
+    }
+
+    /**
+     * Scope for logs with comments.
+     */
+    public function scopeWithComments(Builder $query): Builder
+    {
+        return $query->whereNotNull('comment');
+    }
+
+    /**
+     * Scope for logs that should be preserved (marked or with comments).
+     */
+    public function scopePreserved(Builder $query): Builder
+    {
+        return $query->where('is_marked', true)
+            ->orWhereNotNull('comment');
+    }
+
+    /**
+     * Scope for logs that are not preserved (not marked and without comments).
+     */
+    public function scopeNotPreserved(Builder $query): Builder
+    {
+        return $query->where('is_marked', false)
+            ->whereNull('comment');
     }
 
     /**

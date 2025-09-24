@@ -237,16 +237,18 @@ class DatabaseStorage implements StorageInterface
         $deleted = 0;
 
         try {
-            // Delete normal logs older than specified days
+            // Delete normal logs older than specified days (excluding preserved logs)
             $normalCutoff = Carbon::now()->subDays($normalDays);
             $deleted += ApiLog::where('response_code', '<', 400)
                 ->where('created_at', '<', $normalCutoff)
+                ->notPreserved()
                 ->delete();
 
-            // Delete error logs older than specified days
+            // Delete error logs older than specified days (excluding preserved logs)
             $errorCutoff = Carbon::now()->subDays($errorDays);
             $deleted += ApiLog::where('response_code', '>=', 400)
                 ->where('created_at', '<', $errorCutoff)
+                ->notPreserved()
                 ->delete();
         } catch (QueryException $e) {
             Log::error('Failed to clean old API log entries', [

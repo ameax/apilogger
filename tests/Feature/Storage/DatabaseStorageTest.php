@@ -312,6 +312,83 @@ describe('DatabaseStorage', function () {
         expect(ApiLog::where('request_id', 'recent-error')->exists())->toBeTrue();
     });
 
+    test('does not clean preserved logs (marked or with comments)', function () {
+        // Create old normal log that should be deleted
+        $oldNormal = ApiLog::create([
+            'request_id' => 'old-normal',
+            'method' => 'GET',
+            'endpoint' => '/api/test',
+            'response_code' => 200,
+            'response_time_ms' => 30.0,
+            'is_marked' => false,
+            'comment' => null,
+        ]);
+        $oldNormal->created_at = Carbon::now()->subDays(8);
+        $oldNormal->save();
+
+        // Create old marked log that should be preserved
+        $oldMarked = ApiLog::create([
+            'request_id' => 'old-marked',
+            'method' => 'GET',
+            'endpoint' => '/api/test',
+            'response_code' => 200,
+            'response_time_ms' => 30.0,
+            'is_marked' => true,
+            'comment' => null,
+        ]);
+        $oldMarked->created_at = Carbon::now()->subDays(8);
+        $oldMarked->save();
+
+        // Create old log with comment that should be preserved
+        $oldWithComment = ApiLog::create([
+            'request_id' => 'old-with-comment',
+            'method' => 'GET',
+            'endpoint' => '/api/test',
+            'response_code' => 200,
+            'response_time_ms' => 30.0,
+            'is_marked' => false,
+            'comment' => 'Important log entry',
+        ]);
+        $oldWithComment->created_at = Carbon::now()->subDays(8);
+        $oldWithComment->save();
+
+        // Create old error log that should be deleted
+        $oldError = ApiLog::create([
+            'request_id' => 'old-error',
+            'method' => 'GET',
+            'endpoint' => '/api/test',
+            'response_code' => 500,
+            'response_time_ms' => 30.0,
+            'is_marked' => false,
+            'comment' => null,
+        ]);
+        $oldError->created_at = Carbon::now()->subDays(12);
+        $oldError->save();
+
+        // Create old error log with both marked and comment that should be preserved
+        $oldErrorPreserved = ApiLog::create([
+            'request_id' => 'old-error-preserved',
+            'method' => 'GET',
+            'endpoint' => '/api/test',
+            'response_code' => 500,
+            'response_time_ms' => 30.0,
+            'is_marked' => true,
+            'comment' => 'Critical error to investigate',
+        ]);
+        $oldErrorPreserved->created_at = Carbon::now()->subDays(12);
+        $oldErrorPreserved->save();
+
+        $cleaned = $this->storage->clean(7, 10);
+
+        expect($cleaned)->toBe(2); // old-normal and old-error
+        expect(ApiLog::count())->toBe(3); // 3 preserved logs remain
+        expect(ApiLog::where('request_id', 'old-normal')->exists())->toBeFalse();
+        expect(ApiLog::where('request_id', 'old-error')->exists())->toBeFalse();
+        expect(ApiLog::where('request_id', 'old-marked')->exists())->toBeTrue();
+        expect(ApiLog::where('request_id', 'old-with-comment')->exists())->toBeTrue();
+        expect(ApiLog::where('request_id', 'old-error-preserved')->exists())->toBeTrue();
+    });
+
     test('can count entries with criteria', function () {
         // Create test entries
         ApiLog::create([

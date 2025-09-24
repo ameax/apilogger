@@ -174,3 +174,56 @@ it('identifies response types correctly', function () {
         ->and($errorLog->isSuccess())->toBeFalse()
         ->and($errorLog->isError())->toBeTrue();
 });
+
+it('uses marked scope correctly', function () {
+    ApiLog::create(['request_id' => '1', 'method' => 'GET', 'endpoint' => '/test', 'response_code' => 200, 'response_time_ms' => 10, 'is_marked' => true]);
+    ApiLog::create(['request_id' => '2', 'method' => 'GET', 'endpoint' => '/test', 'response_code' => 200, 'response_time_ms' => 10, 'is_marked' => false]);
+    ApiLog::create(['request_id' => '3', 'method' => 'GET', 'endpoint' => '/test', 'response_code' => 200, 'response_time_ms' => 10, 'is_marked' => true]);
+
+    expect(ApiLog::marked()->count())->toBe(2);
+});
+
+it('uses withComments scope correctly', function () {
+    ApiLog::create(['request_id' => '1', 'method' => 'GET', 'endpoint' => '/test', 'response_code' => 200, 'response_time_ms' => 10, 'comment' => 'Important log']);
+    ApiLog::create(['request_id' => '2', 'method' => 'GET', 'endpoint' => '/test', 'response_code' => 200, 'response_time_ms' => 10, 'comment' => null]);
+    ApiLog::create(['request_id' => '3', 'method' => 'GET', 'endpoint' => '/test', 'response_code' => 200, 'response_time_ms' => 10, 'comment' => 'Another comment']);
+
+    expect(ApiLog::withComments()->count())->toBe(2);
+});
+
+it('uses preserved scope correctly', function () {
+    ApiLog::create(['request_id' => '1', 'method' => 'GET', 'endpoint' => '/test', 'response_code' => 200, 'response_time_ms' => 10, 'is_marked' => true, 'comment' => null]);
+    ApiLog::create(['request_id' => '2', 'method' => 'GET', 'endpoint' => '/test', 'response_code' => 200, 'response_time_ms' => 10, 'is_marked' => false, 'comment' => 'Has comment']);
+    ApiLog::create(['request_id' => '3', 'method' => 'GET', 'endpoint' => '/test', 'response_code' => 200, 'response_time_ms' => 10, 'is_marked' => false, 'comment' => null]);
+    ApiLog::create(['request_id' => '4', 'method' => 'GET', 'endpoint' => '/test', 'response_code' => 200, 'response_time_ms' => 10, 'is_marked' => true, 'comment' => 'Both']);
+
+    expect(ApiLog::preserved()->count())->toBe(3);
+});
+
+it('uses notPreserved scope correctly', function () {
+    ApiLog::create(['request_id' => '1', 'method' => 'GET', 'endpoint' => '/test', 'response_code' => 200, 'response_time_ms' => 10, 'is_marked' => true, 'comment' => null]);
+    ApiLog::create(['request_id' => '2', 'method' => 'GET', 'endpoint' => '/test', 'response_code' => 200, 'response_time_ms' => 10, 'is_marked' => false, 'comment' => 'Has comment']);
+    ApiLog::create(['request_id' => '3', 'method' => 'GET', 'endpoint' => '/test', 'response_code' => 200, 'response_time_ms' => 10, 'is_marked' => false, 'comment' => null]);
+    ApiLog::create(['request_id' => '4', 'method' => 'GET', 'endpoint' => '/test', 'response_code' => 200, 'response_time_ms' => 10, 'is_marked' => true, 'comment' => 'Both']);
+
+    expect(ApiLog::notPreserved()->count())->toBe(1);
+});
+
+it('stores and retrieves comment and is_marked fields correctly', function () {
+    $log = ApiLog::create([
+        'request_id' => 'test-comment',
+        'method' => 'GET',
+        'endpoint' => '/api/test',
+        'response_code' => 500,
+        'response_time_ms' => 125.5,
+        'comment' => 'This request failed due to a database connection issue',
+        'is_marked' => true,
+    ]);
+
+    expect($log->comment)->toBe('This request failed due to a database connection issue')
+        ->and($log->is_marked)->toBeTrue();
+
+    $retrieved = ApiLog::find($log->id);
+    expect($retrieved->comment)->toBe('This request failed due to a database connection issue')
+        ->and($retrieved->is_marked)->toBeTrue();
+});

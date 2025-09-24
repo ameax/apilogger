@@ -28,6 +28,8 @@ it('creates api_logs table with correct columns', function () {
         ->toContain('ip_address')
         ->toContain('user_agent')
         ->toContain('metadata')
+        ->toContain('comment')
+        ->toContain('is_marked')
         ->toContain('created_at')
         ->toContain('updated_at');
 });
@@ -50,7 +52,25 @@ it('creates indexes for performance', function () {
         ->toContain('api_logs_method_index')
         ->toContain('api_logs_response_code_index')
         ->toContain('api_logs_user_identifier_index')
+        ->toContain('api_logs_is_marked_index')
         ->toContain('api_logs_created_at_index');
+});
+
+it('creates correct column types and defaults', function () {
+    // Test that is_marked has correct default value
+    $log = \Ameax\ApiLogger\Models\ApiLog::create([
+        'request_id' => 'test-defaults',
+        'method' => 'GET',
+        'endpoint' => '/api/test',
+        'response_code' => 200,
+        'response_time_ms' => 10.0,
+    ]);
+
+    // Refresh to get database defaults
+    $log->refresh();
+
+    expect($log->is_marked)->toBeFalse()
+        ->and($log->comment)->toBeNull();
 });
 
 it('rolls back the migration', function () {

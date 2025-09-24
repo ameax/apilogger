@@ -39,6 +39,10 @@ return new class extends Migration
             // Additional metadata
             $table->json('metadata')->nullable();
 
+            // Comment and marking fields
+            $table->text('comment')->nullable();
+            $table->boolean('is_marked')->default(false)->index();
+
             // Timestamps
             $table->timestamp('created_at')->useCurrent()->index();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
@@ -50,6 +54,7 @@ return new class extends Migration
             $table->index(['user_identifier', 'created_at']); // For user-specific queries
             $table->index(['endpoint', 'method']); // For endpoint analysis
             $table->index('response_time_ms'); // For performance analysis
+            $table->index(['is_marked', 'comment']); // For preserved logs queries
         });
     }
 
