@@ -54,7 +54,6 @@ return new class extends Migration
             $table->index(['user_identifier', 'created_at']); // For user-specific queries
             $table->index(['endpoint', 'method']); // For endpoint analysis
             $table->index('response_time_ms'); // For performance analysis
-            $table->index(['is_marked', 'comment']); // For preserved logs queries
         });
     }
 
