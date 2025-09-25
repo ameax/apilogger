@@ -146,6 +146,7 @@ class RequestCapture
         if (str_contains($contentType, 'application/x-www-form-urlencoded') ||
             str_contains($contentType, 'multipart/form-data')) {
             $formData = $request->all();
+
             // Return null if form data is empty
             return empty($formData) ? null : $formData;
         }

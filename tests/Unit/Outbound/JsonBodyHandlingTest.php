@@ -19,7 +19,9 @@ use Orchestra\Testbench\TestCase;
 class JsonBodyHandlingTest extends TestCase
 {
     protected OutboundApiLogger $logger;
+
     protected $storageManagerMock;
+
     protected $storageMock;
 
     protected function setUp(): void
@@ -35,9 +37,9 @@ class JsonBodyHandlingTest extends TestCase
 
         $this->logger = new OutboundApiLogger(
             $this->storageManagerMock,
-            new DataSanitizer(),
-            new OutboundFilterService(),
-            new CorrelationIdManager(),
+            new DataSanitizer,
+            new OutboundFilterService,
+            new CorrelationIdManager,
             Config::get('apilogger')
         );
     }
