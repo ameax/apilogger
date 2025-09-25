@@ -17,6 +17,9 @@ A powerful, flexible, and performant API request/response logging package for La
 - 🧹 **Auto-Cleanup**: Configurable retention policies with different durations for errors
 - 🔄 **Fallback Support**: Multiple storage drivers with automatic failover
 - 🎨 **Highly Configurable**: Extensive configuration options for every use case
+- 🔗 **Outbound API Logging**: Track external API calls with Guzzle middleware
+- 🔍 **Correlation IDs**: Link related requests across inbound and outbound calls
+- 🏢 **Service Registry**: Manage and configure multiple external services
 
 ## Requirements
 
@@ -250,6 +253,73 @@ $sanitizer->addExcludeHeaders(['X-API-Key', 'X-Secret']);
 
 // Add fields to mask (partial display)
 $sanitizer->addMaskFields(['email', 'phone']);
+```
+
+### Outbound API Logging
+
+Track external API calls made by your application using Guzzle:
+
+```php
+use Ameax\ApiLogger\Outbound\GuzzleHandlerStackFactory;
+use Ameax\ApiLogger\Outbound\ServiceRegistry;
+use GuzzleHttp\Client;
+
+// Register a service for automatic logging
+ServiceRegistry::register('App\Services\StripeService', [
+    'enabled' => true,
+    'name' => 'Stripe API',
+    'log_level' => 'full',
+    'hosts' => ['api.stripe.com'],
+    'always_log_errors' => true,
+]);
+
+// Create a Guzzle client with logging middleware
+$stack = GuzzleHandlerStackFactory::createForService('App\Services\StripeService');
+$client = new Client([
+    'handler' => $stack,
+    'base_uri' => 'https://api.stripe.com',
+]);
+
+// All requests made with this client will be logged automatically
+$response = $client->get('/v1/customers');
+```
+
+#### Correlation ID Support
+
+Link related requests across your application:
+
+```php
+use Ameax\ApiLogger\Support\CorrelationIdManager;
+
+// In your middleware or service provider
+$correlationManager = app(CorrelationIdManager::class);
+
+// Will extract from incoming request or generate new one
+$correlationId = $correlationManager->getCorrelationId();
+
+// Automatically propagated to outbound requests
+$client->post('/api/endpoint', [
+    'correlation_id' => $correlationId,
+]);
+```
+
+#### Service Filtering
+
+Configure which external services to log:
+
+```php
+// config/apilogger.php
+'features' => [
+    'outbound' => [
+        'enabled' => true,
+        'filters' => [
+            'include_hosts' => ['*.stripe.com', 'api.paypal.com'],
+            'exclude_hosts' => ['localhost', '127.0.0.1'],
+            'include_services' => ['App\Services\PaymentService'],
+            'always_log_errors' => true,
+        ],
+    ],
+],
 ```
 
 ## Maintenance Commands

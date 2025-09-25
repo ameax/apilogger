@@ -44,6 +44,16 @@ This is a Laravel package built with Spatie's Laravel Package Tools. The package
 - **Models**: `ApiLog` Eloquent model for database storage
 - **Testing**: Comprehensive test suite using Pest PHP
 
+### Outbound API Logging Components (Phase 8-9)
+
+- **GuzzleLoggerMiddleware**: Guzzle middleware for capturing external API calls
+- **OutboundApiLogger**: Core service for logging outbound requests
+- **OutboundFilterService**: Flexible filtering system with include/exclude rules
+- **ServiceRegistry**: Central registry for managing multiple external services
+- **CorrelationIdManager**: Request correlation across inbound/outbound calls
+- **GuzzleHandlerStackFactory**: Factory for creating pre-configured Guzzle stacks
+- **ServiceDetector**: Automatic service detection from execution context
+
 ### Package Features
 
 - **Multiple Storage Backends**: Database (MySQL, PostgreSQL, etc.) and JSON Lines file storage
@@ -91,12 +101,20 @@ This is a Laravel package built with Spatie's Laravel Package Tools. The package
 
 Development is organized into phases documented in the `todo/` directory:
 
-1. **Phase 1: Foundation** - Core architecture, interfaces, configuration
-2. **Phase 2: Storage** - Implement storage drivers and data sanitization
-3. **Phase 3: Middleware** - Request/response capture and processing
-4. **Phase 4: Maintenance** - Cleanup commands and retention policies
-5. **Phase 5: UI Integration** - Contracts for separate UI packages (not implemented in core)
+### Completed Phases
+1. **Phase 1: Foundation** - Core architecture, interfaces, configuration ✅
+2. **Phase 2: Storage** - Implement storage drivers and data sanitization ✅
+3. **Phase 3: Middleware** - Request/response capture and processing ✅
+4. **Phase 4: Maintenance** - Cleanup commands and retention policies ✅
+5. **Phase 5: UI Integration** - Contracts for separate UI packages (future/not auto-implement)
 6. **Phase 6: Testing & Docs** - Comprehensive testing and documentation (ongoing)
+7. **Phase 7: Configuration & Feature Flags** - Independent inbound/outbound control ✅
+8. **Phase 8: Outbound Logging Core** - Guzzle middleware for external API calls ✅
+9. **Phase 9: Service Integration & Filtering** - Service registry, filtering, correlation IDs ✅
+
+### Pending Phases
+10. **Phase 10: Enhanced Metadata & Monitoring** - Extended metadata, retry tracking
+11. **Phase 11: Documentation & Examples** - Complete documentation, integration examples
 
 **Important**: Before implementing each phase, review the corresponding `todo/phase-X-*.md` file for detailed requirements and open questions.
 
