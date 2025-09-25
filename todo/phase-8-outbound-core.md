@@ -21,12 +21,23 @@
 
 ### 2. Implement Guzzle Middleware
 - [ ] Create `src/Outbound/GuzzleLoggerMiddleware.php`
-  - Implement Guzzle middleware interface
+  - Implement Guzzle middleware interface (see proof of concept in `tests/ProofOfConcept/GuzzleMiddlewareTest.php`)
+  - Use promise-based middleware approach for proper async handling:
+    ```php
+    function ($handler) {
+        return function (RequestInterface $request, array $options) use ($handler) {
+            // Capture request before sending
+            $promise = $handler($request, $options);
+            // Use promise->then() to capture response
+        };
+    }
+    ```
   - Capture request data (method, URL, headers, body)
   - Capture response data (status, headers, body, time)
-  - Handle exceptions and error responses
+  - Handle exceptions and error responses via promise rejection callback
   - Generate unique request IDs
-  - Support for correlation IDs
+  - Support for correlation IDs through Guzzle options
+  - Extract custom metadata from Guzzle options (service_name, correlation_id, etc.)
 
 ### 3. Create Outbound API Logger Service
 - [ ] Create `src/Outbound/OutboundApiLogger.php`
@@ -65,15 +76,16 @@
 
 ### 7. Testing
 - [ ] Unit tests for GuzzleLoggerMiddleware
-  - Test request/response capture
-  - Test error handling
-  - Test with various HTTP methods
+  - Test request/response capture (see working examples in `tests/ProofOfConcept/GuzzleMiddlewareTest.php`)
+  - Test error handling (500 responses, connection errors)
+  - Test with various HTTP methods (GET, POST, PUT, DELETE)
+  - Test different content types (JSON, form data, multipart)
 - [ ] Unit tests for OutboundApiLogger
   - Test LogEntry creation
   - Test metadata generation
   - Test sanitization integration
 - [ ] Integration tests with mock HTTP server
-- [ ] Test with real Guzzle client
+- [ ] Test with real Guzzle client and public APIs (httpbin.org is useful for testing)
 
 ### 8. Quality Checks
 - [ ] Run PHPStan level 8
@@ -106,6 +118,14 @@
 - [ ] All tests passing with good coverage
 
 ## Implementation Notes
+- **Proof of Concept Available**: See `tests/ProofOfConcept/GuzzleMiddlewareTest.php` for working examples
+- The proof of concept demonstrates:
+  - Promise-based middleware implementation (critical for proper async handling)
+  - Capturing request/response with timing information
+  - Handling different content types (JSON, form data, multipart)
+  - Error response handling (4xx, 5xx status codes)
+  - Extracting custom metadata from Guzzle options
+  - Body stream rewinding to avoid consuming the stream
 - Reuse existing components where possible (DataSanitizer, StorageManager)
 - Keep middleware lightweight - defer heavy processing
 - Consider memory usage for large payloads
