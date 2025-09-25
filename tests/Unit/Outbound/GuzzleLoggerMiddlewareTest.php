@@ -42,14 +42,13 @@ it('logs successful requests', function () {
 
     $this->logger->shouldReceive('logResponse')
         ->once()
-        ->with(
-            $requestId,
-            Mockery::type(RequestInterface::class),
-            Mockery::type(ResponseInterface::class),
-            Mockery::type('float'),
-            Mockery::type('array'),
-            null
-        );
+        ->withArgs(function ($id, $req, $res, $duration, $opts) use ($requestId) {
+            return $id === $requestId
+                && $req instanceof RequestInterface
+                && $res instanceof ResponseInterface
+                && is_float($duration)
+                && is_array($opts);
+        });
 
     $mock = new MockHandler([$response]);
     $handlerStack = HandlerStack::create($mock);
@@ -93,18 +92,16 @@ it('logs requests with custom options', function () {
 
     $this->logger->shouldReceive('logResponse')
         ->once()
-        ->with(
-            $requestId,
-            Mockery::type(RequestInterface::class),
-            Mockery::type(ResponseInterface::class),
-            Mockery::type('float'),
-            Mockery::on(function ($opts) use ($options) {
-                return isset($opts['service_name']) && $opts['service_name'] === 'TestService'
-                    && isset($opts['correlation_id']) && $opts['correlation_id'] === 'correlation-123'
-                    && isset($opts['timeout']) && $opts['timeout'] === 30;
-            }),
-            null
-        );
+        ->withArgs(function ($id, $req, $res, $duration, $opts) use ($requestId) {
+            return $id === $requestId
+                && $req instanceof RequestInterface
+                && $res instanceof ResponseInterface
+                && is_float($duration)
+                && is_array($opts)
+                && isset($opts['service_name']) && $opts['service_name'] === 'TestService'
+                && isset($opts['correlation_id']) && $opts['correlation_id'] === 'correlation-123'
+                && isset($opts['timeout']) && $opts['timeout'] === 30;
+        });
 
     $mock = new MockHandler([$response]);
     $handlerStack = HandlerStack::create($mock);
@@ -133,14 +130,13 @@ it('logs error responses', function () {
 
     $this->logger->shouldReceive('logResponse')
         ->once()
-        ->with(
-            $requestId,
-            Mockery::type(RequestInterface::class),
-            Mockery::type(ResponseInterface::class),
-            Mockery::type('float'),
-            Mockery::type('array'),
-            null
-        );
+        ->withArgs(function ($id, $req, $res, $duration, $opts) use ($requestId) {
+            return $id === $requestId
+                && $req instanceof RequestInterface
+                && $res instanceof ResponseInterface
+                && is_float($duration)
+                && is_array($opts);
+        });
 
     $mock = new MockHandler([$response]);
     $handlerStack = HandlerStack::create($mock);
