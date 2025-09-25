@@ -42,6 +42,23 @@ class ApiLog extends Model
     protected $table = 'api_logs';
 
     /**
+     * Create a new model instance.
+     *
+     * @param  array  $attributes
+     * @return void
+     */
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+
+        // Set the connection from config if specified
+        $connection = config('apilogger.storage.database.connection');
+        if ($connection && $connection !== config('database.default')) {
+            $this->setConnection($connection);
+        }
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>

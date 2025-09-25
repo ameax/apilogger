@@ -44,6 +44,10 @@ return [
 
         // Database storage specific settings
         'database' => [
+            // Database connection to use for storing logs
+            // You can specify a separate connection (e.g., 'sqlite') while your main app uses 'mysql'
+            // Set to null or omit to use the default database connection
+            // Example: 'sqlite' to use SQLite, 'mysql' to use MySQL, 'pgsql' for PostgreSQL
             'connection' => env('API_LOGGER_DB_CONNECTION', config('database.default')),
             'table' => 'api_logs',
         ],
