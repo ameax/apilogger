@@ -2,6 +2,55 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Important: Laravel Package Development Context
+
+**This is a Laravel package, NOT a Laravel application.** This distinction is critical for development:
+
+### Package Limitations & Considerations
+
+1. **No Direct Artisan Access**:
+   - Cannot run `php artisan` commands directly in the package
+   - Must use Orchestra Testbench for testing Laravel features
+   - Package commands are registered but not executable here
+
+2. **Migrations**:
+   - Migrations are provided but not run automatically
+   - Users must publish and run migrations in their Laravel apps
+   - Testing uses in-memory SQLite database via Testbench
+   - Cannot modify existing migrations after release (must create new ones)
+   - For package updates: create NEW migration files with timestamps
+
+3. **Configuration**:
+   - Config files must be published to host Laravel app
+   - Default config values should work without publishing
+   - Use `config()` helper with fallback defaults
+
+4. **Routes & Controllers**:
+   - Package doesn't have its own routes or controllers
+   - Middleware is registered by the service provider
+   - Users apply middleware in their applications
+
+5. **Views & Assets**:
+   - Views must be publishable, not directly accessible
+   - No public directory or compiled assets
+   - UI components are separate packages
+
+6. **Database Operations**:
+   - Cannot run migrations directly
+   - Tests use Testbench's database setup
+   - Support multiple database connections via config
+
+7. **Testing Environment**:
+   - Orchestra Testbench provides Laravel application context
+   - Tests run in isolation with temporary databases
+   - Feature tests simulate full Laravel environment
+
+8. **Development Workflow**:
+   - Make changes to package code
+   - Run tests with `composer test`
+   - Cannot "serve" or "run" the package standalone
+   - Test in a real Laravel app by requiring locally
+
 ## Development Commands
 
 ### Testing
@@ -190,3 +239,4 @@ Tests use Orchestra Testbench for Laravel package testing. The test matrix inclu
 - Support different masking strategies
 - Ensure PII compliance options
 - Secure file permissions for JSON logs
+- migrations are store as .stub file an registered in ServiceProvider. For tests we can add a symlink to have the same migration also as .php file
