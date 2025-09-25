@@ -15,7 +15,6 @@ it('creates api_logs table with correct columns', function () {
     $columns = Schema::getColumnListing('api_logs');
 
     expect($columns)->toContain('id')
-        ->toContain('request_id')
         ->toContain('method')
         ->toContain('endpoint')
         ->toContain('request_headers')
@@ -30,6 +29,10 @@ it('creates api_logs table with correct columns', function () {
         ->toContain('metadata')
         ->toContain('comment')
         ->toContain('is_marked')
+        ->toContain('direction')
+        ->toContain('service')
+        ->toContain('correlation_identifier')
+        ->toContain('retry_attempt')
         ->toContain('created_at')
         ->toContain('updated_at');
 });
@@ -48,18 +51,20 @@ it('creates indexes for performance', function () {
 
     $indexNames = $indexes->keys()->map(fn ($name) => strtolower($name))->toArray();
 
-    expect($indexNames)->toContain('api_logs_request_id_unique')
-        ->toContain('api_logs_method_index')
+    expect($indexNames)->toContain('api_logs_method_index')
         ->toContain('api_logs_response_code_index')
         ->toContain('api_logs_user_identifier_index')
         ->toContain('api_logs_is_marked_index')
-        ->toContain('api_logs_created_at_index');
+        ->toContain('api_logs_created_at_index')
+        ->toContain('api_logs_direction_index')
+        ->toContain('api_logs_service_index')
+        ->toContain('api_logs_correlation_identifier_index')
+        ->toContain('api_logs_retry_attempt_index');
 });
 
 it('creates correct column types and defaults', function () {
-    // Test that is_marked has correct default value
+    // Test that columns have correct default values
     $log = \Ameax\ApiLogger\Models\ApiLog::create([
-        'request_id' => 'test-defaults',
         'method' => 'GET',
         'endpoint' => '/api/test',
         'response_code' => 200,
@@ -70,7 +75,9 @@ it('creates correct column types and defaults', function () {
     $log->refresh();
 
     expect($log->is_marked)->toBeFalse()
-        ->and($log->comment)->toBeNull();
+        ->and($log->comment)->toBeNull()
+        ->and($log->direction)->toBe('inbound')
+        ->and($log->retry_attempt)->toBe(0);
 });
 
 it('rolls back the migration', function () {
@@ -82,4 +89,10 @@ it('rolls back the migration', function () {
     $migration->down();
 
     expect(Schema::hasTable('api_logs'))->toBeFalse();
+});
+
+it('verifies that request_id column does not exist', function () {
+    $columns = Schema::getColumnListing('api_logs');
+
+    expect($columns)->not->toContain('request_id');
 });

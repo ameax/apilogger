@@ -23,6 +23,8 @@ class RequestCapture
      */
     public function capture(Request $request): array
     {
+        $correlationId = $this->generateRequestId($request);
+
         $data = [
             'method' => $request->getMethod(),
             'endpoint' => $this->getEndpoint($request),
@@ -32,16 +34,24 @@ class RequestCapture
             'ip_address' => $this->getIpAddress($request),
             'user_agent' => $request->userAgent(),
             'user_identifier' => $this->getUserIdentifier($request),
-            'request_id' => $this->generateRequestId($request),
+            'correlation_identifier' => $correlationId,
+        ];
+
+        // Start with base metadata
+        $metadata = [
+            'correlation_id' => $correlationId,
+            'direction' => 'inbound',
         ];
 
         // Add custom enrichment data
         if (isset($this->config['enrichment']['custom_callback']) && is_callable($this->config['enrichment']['custom_callback'])) {
             $customData = call_user_func($this->config['enrichment']['custom_callback'], $request);
             if (is_array($customData)) {
-                $data['metadata'] = $customData;
+                $metadata = array_merge($metadata, $customData);
             }
         }
+
+        $data['metadata'] = $metadata;
 
         return $data;
     }
