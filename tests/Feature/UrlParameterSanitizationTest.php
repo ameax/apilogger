@@ -43,11 +43,11 @@ class UrlParameterSanitizationTest extends TestCase
         $log = ApiLog::first();
         $this->assertNotNull($log);
 
-        // Check that the token is sanitized in metadata
-        $metadata = $log->metadata;
-        $this->assertArrayHasKey('query_params', $metadata);
-        $this->assertEquals('[REDACTED]', $metadata['query_params']['token']);
-        $this->assertEquals('john', $metadata['query_params']['user']);
+        // Check that the token is sanitized in request_parameters
+        $requestParams = $log->request_parameters;
+        $this->assertNotNull($requestParams);
+        $this->assertEquals('[REDACTED]', $requestParams['token']);
+        $this->assertEquals('john', $requestParams['user']);
 
         // Ensure the endpoint doesn't contain the query string
         $this->assertEquals('/api/test', $log->endpoint);
@@ -66,10 +66,10 @@ class UrlParameterSanitizationTest extends TestCase
         $log = ApiLog::first();
         $this->assertNotNull($log);
 
-        $metadata = $log->metadata;
-        $this->assertArrayHasKey('query_params', $metadata);
-        $this->assertEquals('[REDACTED]', $metadata['query_params']['api_key']);
-        $this->assertEquals('json', $metadata['query_params']['format']);
+        $requestParams = $log->request_parameters;
+        $this->assertNotNull($requestParams);
+        $this->assertEquals('[REDACTED]', $requestParams['api_key']);
+        $this->assertEquals('json', $requestParams['format']);
     }
 
     public function test_it_sanitizes_multiple_sensitive_params(): void
@@ -85,11 +85,11 @@ class UrlParameterSanitizationTest extends TestCase
         $log = ApiLog::first();
         $this->assertNotNull($log);
 
-        $metadata = $log->metadata;
-        $this->assertArrayHasKey('query_params', $metadata);
-        $this->assertEquals('[REDACTED]', $metadata['query_params']['token']);
-        $this->assertEquals('[REDACTED]', $metadata['query_params']['secret']);
-        $this->assertEquals('admin', $metadata['query_params']['username']);
+        $requestParams = $log->request_parameters;
+        $this->assertNotNull($requestParams);
+        $this->assertEquals('[REDACTED]', $requestParams['token']);
+        $this->assertEquals('[REDACTED]', $requestParams['secret']);
+        $this->assertEquals('admin', $requestParams['username']);
     }
 
     public function test_data_sanitizer_handles_query_params_correctly(): void
@@ -129,10 +129,10 @@ class UrlParameterSanitizationTest extends TestCase
         $log = ApiLog::first();
         $this->assertNotNull($log);
 
-        $metadata = $log->metadata;
-        $this->assertArrayHasKey('query_params', $metadata);
-        $this->assertArrayHasKey('filters', $metadata['query_params']);
-        $this->assertEquals('[REDACTED]', $metadata['query_params']['filters']['token']);
-        $this->assertEquals('active', $metadata['query_params']['filters']['status']);
+        $requestParams = $log->request_parameters;
+        $this->assertNotNull($requestParams);
+        $this->assertArrayHasKey('filters', $requestParams);
+        $this->assertEquals('[REDACTED]', $requestParams['filters']['token']);
+        $this->assertEquals('active', $requestParams['filters']['status']);
     }
 }

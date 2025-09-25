@@ -59,12 +59,12 @@ class UrlParameterSanitizationTest extends TestCase
         // The endpoint should not contain query params
         $this->assertEquals('https://api.example.com/endpoint', $log->endpoint);
 
-        // Check metadata for sanitized query params
-        $metadata = $log->metadata;
-        $this->assertArrayHasKey('query_params', $metadata);
-        $this->assertEquals('[REDACTED]', $metadata['query_params']['api_key']);
-        $this->assertEquals('[REDACTED]', $metadata['query_params']['token']);
-        $this->assertEquals('json', $metadata['query_params']['format']);
+        // Check request_parameters for sanitized query params
+        $requestParams = $log->request_parameters;
+        $this->assertNotNull($requestParams);
+        $this->assertEquals('[REDACTED]', $requestParams['api_key']);
+        $this->assertEquals('[REDACTED]', $requestParams['token']);
+        $this->assertEquals('json', $requestParams['format']);
     }
 
     public function test_it_sanitizes_url_with_mixed_params(): void
@@ -92,11 +92,11 @@ class UrlParameterSanitizationTest extends TestCase
         // Endpoint should be clean
         $this->assertEquals('https://webhook.site/unique-id', $log->endpoint);
 
-        // Query params should be sanitized in metadata
-        $metadata = $log->metadata;
-        $this->assertArrayHasKey('query_params', $metadata);
-        $this->assertEquals('[REDACTED]', $metadata['query_params']['secret']);
-        $this->assertEquals('user.created', $metadata['query_params']['event']);
+        // Query params should be sanitized in request_parameters
+        $requestParams = $log->request_parameters;
+        $this->assertNotNull($requestParams);
+        $this->assertEquals('[REDACTED]', $requestParams['secret']);
+        $this->assertEquals('user.created', $requestParams['event']);
     }
 
     public function test_it_handles_urls_without_query_params(): void
@@ -120,10 +120,8 @@ class UrlParameterSanitizationTest extends TestCase
 
         $this->assertEquals('https://api.example.com/users/123', $log->endpoint);
 
-        // Should not have query_params in metadata if there are none
-        $metadata = $log->metadata;
-        if (isset($metadata['query_params'])) {
-            $this->assertEmpty($metadata['query_params']);
-        }
+        // Should have empty request_parameters if there are none
+        $requestParams = $log->request_parameters;
+        $this->assertEmpty($requestParams);
     }
 }

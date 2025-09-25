@@ -201,11 +201,14 @@ it('extracts metadata from request and options', function () {
 
     $metadata = $this->logger->extractMetadata($request, $options);
 
-    expect($metadata)->toHaveKey('host', 'api.example.com');
-    expect($metadata)->toHaveKey('port', 8080);
-    expect($metadata)->toHaveKey('scheme', 'https');
-    expect($metadata)->toHaveKey('path', '/users');
-    expect($metadata)->toHaveKey('query', 'page=1&limit=10');
+    // URL parts are not stored in metadata anymore (they're in endpoint and request_parameters)
+    expect($metadata)->not->toHaveKey('host');
+    expect($metadata)->not->toHaveKey('port');
+    expect($metadata)->not->toHaveKey('scheme');
+    expect($metadata)->not->toHaveKey('path');
+    expect($metadata)->not->toHaveKey('query');
+
+    // Service and other metadata should still be present
     expect($metadata)->toHaveKey('service_name', 'UserAPI');
     expect($metadata)->toHaveKey('service', 'UserService');
     expect($metadata)->toHaveKey('correlation_id', 'main-req-123');

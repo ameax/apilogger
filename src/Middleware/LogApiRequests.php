@@ -169,14 +169,7 @@ class LogApiRequests
             // Sanitize query parameters
             $sanitizedQueryParams = $this->sanitizer->sanitizeQueryParams($requestData['query_params'] ?? []);
 
-            // Optionally sanitize the endpoint if it contains query params
             $endpoint = $requestData['endpoint'];
-            if (! empty($requestData['query_params'])) {
-                // Store sanitized query params in metadata instead of in the URL
-                $metadata = $requestData['metadata'] ?? [];
-                $metadata['query_params'] = $sanitizedQueryParams;
-                $requestData['metadata'] = $metadata;
-            }
 
             // Create log entry
             $logEntry = new LogEntry(
@@ -196,7 +189,6 @@ class LogApiRequests
                     $requestData['metadata'] ?? [],
                     [
                         'memory_usage' => $responseData['memory_usage'] ?? null,
-                        'query_params' => $sanitizedQueryParams,
                     ]
                 ),
                 requestParameters: $sanitizedQueryParams,
@@ -255,7 +247,6 @@ class LogApiRequests
                     $requestData['metadata'] ?? [],
                     [
                         'error_logged' => true,
-                        'query_params' => $sanitizedQueryParams,
                     ]
                 ),
                 requestParameters: $sanitizedQueryParams,

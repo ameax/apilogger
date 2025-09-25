@@ -114,10 +114,6 @@ class OutboundApiLogger implements OutboundLoggerInterface
         $sanitizedEndpoint = $uri->getScheme().'://'.$uri->getHost().
             ($uri->getPort() ? ':'.$uri->getPort() : '').$uri->getPath();
 
-        // Add sanitized query params to metadata
-        if (! empty($sanitizedQueryParams)) {
-            $metadata['query_params'] = $sanitizedQueryParams;
-        }
 
         $logEntry = new LogEntry(
             requestId: $requestId,
@@ -164,15 +160,7 @@ class OutboundApiLogger implements OutboundLoggerInterface
 
     public function extractMetadata(RequestInterface $request, array $options = []): array
     {
-        $uri = $request->getUri();
-
-        $metadata = [
-            'host' => $uri->getHost(),
-            'port' => $uri->getPort(),
-            'scheme' => $uri->getScheme(),
-            'path' => $uri->getPath(),
-            'query' => $uri->getQuery(),
-        ];
+        $metadata = [];
 
         // Extract service information
         if (isset($options['service'])) {
