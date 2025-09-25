@@ -86,6 +86,16 @@ class DataSanitizer
     }
 
     /**
+     * Sanitize request/response body.
+     *
+     * @param  mixed  $body  The body data to sanitize
+     */
+    public function sanitizeBody(mixed $body): mixed
+    {
+        return $this->sanitize($body);
+    }
+
+    /**
      * Sanitize headers array.
      *
      * @param  array<string, mixed>  $headers
