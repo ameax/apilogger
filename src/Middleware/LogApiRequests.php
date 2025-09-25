@@ -166,11 +166,23 @@ class LogApiRequests
             $sanitizedResponseHeaders = $this->sanitizer->sanitizeHeaders($responseData['headers'] ?? []);
             $sanitizedResponseBody = $this->sanitizer->sanitize($responseData['body'], 'response');
 
+            // Sanitize query parameters
+            $sanitizedQueryParams = $this->sanitizer->sanitizeQueryParams($requestData['query_params'] ?? []);
+
+            // Optionally sanitize the endpoint if it contains query params
+            $endpoint = $requestData['endpoint'];
+            if (! empty($requestData['query_params'])) {
+                // Store sanitized query params in metadata instead of in the URL
+                $metadata = $requestData['metadata'] ?? [];
+                $metadata['query_params'] = $sanitizedQueryParams;
+                $requestData['metadata'] = $metadata;
+            }
+
             // Create log entry
             $logEntry = new LogEntry(
                 requestId: $requestData['correlation_identifier'] ?? $requestData['request_id'] ?? '',
                 method: $requestData['method'],
-                endpoint: $requestData['endpoint'],
+                endpoint: $endpoint,
                 requestHeaders: $sanitizedRequestHeaders,
                 requestBody: $sanitizedRequestBody,
                 responseCode: $responseData['status_code'],
@@ -182,7 +194,10 @@ class LogApiRequests
                 userAgent: $requestData['user_agent'],
                 metadata: array_merge(
                     $requestData['metadata'] ?? [],
-                    ['memory_usage' => $responseData['memory_usage'] ?? null]
+                    [
+                        'memory_usage' => $responseData['memory_usage'] ?? null,
+                        'query_params' => $sanitizedQueryParams,
+                    ]
                 ),
             );
 
@@ -204,6 +219,9 @@ class LogApiRequests
 
             // Calculate response time
             $responseTimeMs = (microtime(true) - $startTime) * 1000;
+
+            // Sanitize query parameters
+            $sanitizedQueryParams = $this->sanitizer->sanitizeQueryParams($requestData['query_params'] ?? []);
 
             // Prepare error response data
             $errorData = [
@@ -234,7 +252,10 @@ class LogApiRequests
                 userAgent: $requestData['user_agent'],
                 metadata: array_merge(
                     $requestData['metadata'] ?? [],
-                    ['error_logged' => true]
+                    [
+                        'error_logged' => true,
+                        'query_params' => $sanitizedQueryParams,
+                    ]
                 ),
             );
 

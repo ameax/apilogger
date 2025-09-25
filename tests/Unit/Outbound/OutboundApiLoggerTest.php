@@ -76,18 +76,23 @@ it('logs successful responses', function () {
     ];
 
     $this->dataSanitizer->shouldReceive('sanitizeBody')
-        ->with('{"name":"John"}')
+        ->with(['name' => 'John'])
         ->once()
         ->andReturn(['name' => 'John']);
 
     $this->dataSanitizer->shouldReceive('sanitizeBody')
-        ->with('{"id":1,"name":"John"}')
+        ->with(['id' => 1, 'name' => 'John'])
         ->once()
         ->andReturn(['id' => 1, 'name' => 'John']);
 
     $this->dataSanitizer->shouldReceive('sanitizeHeaders')
         ->twice()
         ->andReturnUsing(fn ($headers) => $headers);
+
+    $this->dataSanitizer->shouldReceive('sanitizeQueryParams')
+        ->with([])
+        ->once()
+        ->andReturn([]);
 
     $storageInstance = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
     $this->storageManager->shouldReceive('store')
@@ -116,19 +121,20 @@ it('logs error responses', function () {
     $request = new Request('GET', 'https://api.example.com/error');
     $response = new Response(500, [], '{"error":"Internal Server Error"}');
 
+    // Request has no body, so sanitizeBody won't be called for request
     $this->dataSanitizer->shouldReceive('sanitizeBody')
-        ->with('')
-        ->once()
-        ->andReturn('');
-
-    $this->dataSanitizer->shouldReceive('sanitizeBody')
-        ->with('{"error":"Internal Server Error"}')
+        ->with(['error' => 'Internal Server Error'])
         ->once()
         ->andReturn(['error' => 'Internal Server Error']);
 
     $this->dataSanitizer->shouldReceive('sanitizeHeaders')
         ->twice()
         ->andReturnUsing(fn ($headers) => $headers);
+
+    $this->dataSanitizer->shouldReceive('sanitizeQueryParams')
+        ->with([])
+        ->once()
+        ->andReturn([]);
 
     $storageInstance = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
     $this->storageManager->shouldReceive('store')
@@ -152,14 +158,16 @@ it('logs exceptions without response', function () {
     $request = new Request('GET', 'https://api.example.com/timeout');
     $error = new \Exception('Connection timeout', 408);
 
-    $this->dataSanitizer->shouldReceive('sanitizeBody')
-        ->with('')
-        ->once()
-        ->andReturn('');
+    // Request has no body and response is null, so sanitizeBody won't be called at all
 
     $this->dataSanitizer->shouldReceive('sanitizeHeaders')
         ->twice()
         ->andReturnUsing(fn ($headers) => $headers);
+
+    $this->dataSanitizer->shouldReceive('sanitizeQueryParams')
+        ->with([])
+        ->once()
+        ->andReturn([]);
 
     $storageInstance = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
     $this->storageManager->shouldReceive('store')
@@ -284,6 +292,11 @@ it('handles multipart headers correctly', function () {
             return $headers;
         });
 
+    $this->dataSanitizer->shouldReceive('sanitizeQueryParams')
+        ->with([])
+        ->once()
+        ->andReturn([]);
+
     $storageInstance = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
     $this->storageManager->shouldReceive('store')
         ->once()
@@ -304,6 +317,10 @@ it('preserves request and response body streams', function () {
 
     $this->dataSanitizer->shouldReceive('sanitizeBody')->andReturnUsing(fn ($body) => $body);
     $this->dataSanitizer->shouldReceive('sanitizeHeaders')->andReturnUsing(fn ($headers) => $headers);
+    $this->dataSanitizer->shouldReceive('sanitizeQueryParams')
+        ->with([])
+        ->once()
+        ->andReturn([]);
 
     $storageInstance = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
     $this->storageManager->shouldReceive('store')

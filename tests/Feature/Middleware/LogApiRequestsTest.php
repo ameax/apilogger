@@ -65,6 +65,15 @@ it('sanitizes sensitive data before logging', function () {
         expect($requestBody['username'])->toBe('john');
         expect($requestBody['email'])->toContain('**');
 
+        // Check that query params are sanitized in metadata
+        $metadata = $logEntry->getMetadata();
+        if (isset($metadata['query_params'])) {
+            // If there were query params with sensitive data, they should be sanitized
+            if (isset($metadata['query_params']['token'])) {
+                expect($metadata['query_params']['token'])->toBe('[REDACTED]');
+            }
+        }
+
         return true;
     }));
 

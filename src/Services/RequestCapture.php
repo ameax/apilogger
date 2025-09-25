@@ -117,6 +117,15 @@ class RequestCapture
             ];
         }
 
+        // Try to parse form data first (before getting raw content)
+        if (str_contains($contentType, 'application/x-www-form-urlencoded') ||
+            str_contains($contentType, 'multipart/form-data')) {
+            $formData = $request->all();
+
+            // Return null if form data is empty
+            return empty($formData) ? null : $formData;
+        }
+
         // Get the raw content
         $content = $request->getContent();
 
@@ -140,15 +149,6 @@ class RequestCapture
             if (json_last_error() === JSON_ERROR_NONE) {
                 return $decoded;
             }
-        }
-
-        // Try to parse form data
-        if (str_contains($contentType, 'application/x-www-form-urlencoded') ||
-            str_contains($contentType, 'multipart/form-data')) {
-            $formData = $request->all();
-
-            // Return null if form data is empty
-            return empty($formData) ? null : $formData;
         }
 
         // Return raw content for other types

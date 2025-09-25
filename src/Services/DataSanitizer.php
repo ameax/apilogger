@@ -149,6 +149,49 @@ class DataSanitizer
     }
 
     /**
+     * Sanitize query parameters (URL parameters).
+     *
+     * @param  array<string, mixed>  $queryParams
+     * @return array<string, mixed>
+     */
+    public function sanitizeQueryParams(array $queryParams): array
+    {
+        // Use the same logic as sanitizeArray since query params follow similar rules
+        return $this->sanitizeArray($queryParams);
+    }
+
+    /**
+     * Sanitize endpoint URL to remove or mask sensitive data.
+     * This handles cases where tokens might be in the URL path itself.
+     *
+     * @param  string  $endpoint
+     * @param  array<string, mixed>  $queryParams
+     * @return string
+     */
+    public function sanitizeEndpoint(string $endpoint, array $queryParams = []): string
+    {
+        // If there are query parameters with sensitive data, rebuild the URL
+        if (! empty($queryParams)) {
+            // Parse the URL
+            $urlParts = parse_url($endpoint);
+            $baseUrl = $urlParts['path'] ?? $endpoint;
+
+            // Sanitize query params
+            $sanitizedParams = $this->sanitizeQueryParams($queryParams);
+
+            // Rebuild query string if there are params
+            if (! empty($sanitizedParams)) {
+                $queryString = http_build_query($sanitizedParams);
+                return $baseUrl . '?' . $queryString;
+            }
+
+            return $baseUrl;
+        }
+
+        return $endpoint;
+    }
+
+    /**
      * Sanitize an array recursively.
      *
      * @param  array<string, mixed>  $data

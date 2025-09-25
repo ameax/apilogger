@@ -113,6 +113,7 @@ it('handles binary content', function () {
 it('truncates large bodies', function () {
     $largeData = str_repeat('x', 2000);
     $request = Request::create('/api/test', 'POST', [], [], [], [], $largeData);
+    $request->headers->set('Content-Type', 'text/plain');
 
     $captured = $this->requestCapture->capture($request);
 
