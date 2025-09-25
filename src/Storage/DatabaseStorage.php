@@ -72,7 +72,7 @@ class DatabaseStorage implements StorageInterface
                     $attributes['updated_at'] = Carbon::now()->toDateTimeString();
 
                     // Ensure arrays are JSON encoded for batch insert
-                    foreach (['request_headers', 'request_body', 'response_headers', 'response_body', 'metadata'] as $field) {
+                    foreach (['request_headers', 'request_body', 'request_parameters', 'response_headers', 'response_body', 'metadata'] as $field) {
                         if (isset($attributes[$field]) && is_array($attributes[$field])) {
                             $attributes[$field] = json_encode($attributes[$field]);
                         }

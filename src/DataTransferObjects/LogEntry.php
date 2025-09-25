@@ -28,6 +28,7 @@ class LogEntry implements Arrayable, Jsonable, LogEntryInterface
         private readonly ?string $userAgent = null,
         ?Carbon $createdAt = null,
         private readonly array $metadata = [],
+        private readonly array $requestParameters = [],
     ) {
         $this->actualCreatedAt = $createdAt ?? Carbon::now();
     }
@@ -55,6 +56,11 @@ class LogEntry implements Arrayable, Jsonable, LogEntryInterface
     public function getRequestBody(): mixed
     {
         return $this->requestBody;
+    }
+
+    public function getRequestParameters(): array
+    {
+        return $this->requestParameters;
     }
 
     public function getResponseCode(): int
@@ -110,6 +116,7 @@ class LogEntry implements Arrayable, Jsonable, LogEntryInterface
             'endpoint' => $this->endpoint,
             'request_headers' => $this->requestHeaders,
             'request_body' => $this->requestBody,
+            'request_parameters' => $this->requestParameters,
             'response_code' => $this->responseCode,
             'response_headers' => $this->responseHeaders,
             'response_body' => $this->responseBody,
@@ -140,6 +147,7 @@ class LogEntry implements Arrayable, Jsonable, LogEntryInterface
             endpoint: $data['endpoint'] ?? '',
             requestHeaders: $data['request_headers'] ?? [],
             requestBody: $data['request_body'] ?? null,
+            requestParameters: $data['request_parameters'] ?? [],
             responseCode: $data['response_code'] ?? 0,
             responseHeaders: $data['response_headers'] ?? [],
             responseBody: $data['response_body'] ?? null,

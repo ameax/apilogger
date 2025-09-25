@@ -19,6 +19,7 @@ it('creates api_logs table with correct columns', function () {
         ->toContain('endpoint')
         ->toContain('request_headers')
         ->toContain('request_body')
+        ->toContain('request_parameters')
         ->toContain('response_code')
         ->toContain('response_headers')
         ->toContain('response_body')

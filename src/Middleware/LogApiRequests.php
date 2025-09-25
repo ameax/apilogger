@@ -199,6 +199,7 @@ class LogApiRequests
                         'query_params' => $sanitizedQueryParams,
                     ]
                 ),
+                requestParameters: $sanitizedQueryParams,
             );
 
             // Store the log entry
@@ -257,6 +258,7 @@ class LogApiRequests
                         'query_params' => $sanitizedQueryParams,
                     ]
                 ),
+                requestParameters: $sanitizedQueryParams,
             );
 
             // Store the error log

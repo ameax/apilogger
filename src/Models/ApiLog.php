@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $endpoint
  * @property array|null $request_headers
  * @property mixed $request_body
+ * @property array|null $request_parameters
  * @property int $response_code
  * @property array|null $response_headers
  * @property mixed $response_body
@@ -67,6 +68,7 @@ class ApiLog extends Model
         'endpoint',
         'request_headers',
         'request_body',
+        'request_parameters',
         'response_code',
         'response_headers',
         'response_body',
@@ -91,6 +93,7 @@ class ApiLog extends Model
     protected $casts = [
         'request_headers' => 'array',
         'request_body' => 'array',
+        'request_parameters' => 'array',
         'response_headers' => 'array',
         'response_body' => 'array',
         'metadata' => 'array',
@@ -130,6 +133,7 @@ class ApiLog extends Model
             userAgent: $this->user_agent,
             createdAt: $this->created_at,
             metadata: $fullMetadata,
+            requestParameters: $this->request_parameters ?? [],
         );
     }
 
@@ -157,6 +161,7 @@ class ApiLog extends Model
             'endpoint' => $entry->getEndpoint(),
             'request_headers' => $entry->getRequestHeaders(),
             'request_body' => $entry->getRequestBody(),
+            'request_parameters' => $entry->getRequestParameters(),
             'response_code' => $entry->getResponseCode(),
             'response_headers' => $entry->getResponseHeaders(),
             'response_body' => $entry->getResponseBody(),

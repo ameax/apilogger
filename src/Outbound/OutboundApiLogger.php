@@ -133,7 +133,8 @@ class OutboundApiLogger implements OutboundLoggerInterface
             ipAddress: null,
             userAgent: $request->getHeaderLine('User-Agent'),
             createdAt: Carbon::now(),
-            metadata: $metadata
+            metadata: $metadata,
+            requestParameters: $sanitizedQueryParams
         );
 
         $this->storageManager->store()->store($logEntry);
