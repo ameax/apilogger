@@ -44,7 +44,6 @@ class ApiLog extends Model
     /**
      * Create a new model instance.
      *
-     * @param  array  $attributes
      * @return void
      */
     public function __construct(array $attributes = [])
