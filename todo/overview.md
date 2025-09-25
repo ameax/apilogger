@@ -1,28 +1,30 @@
 # API Logger Package - Implementation Overview
 
 ## Package Goal
-Create a flexible, performant API request/response logging package for Laravel with support for multiple storage backends (database, JSON lines files) and comprehensive configuration options.
+Create a flexible, performant API request/response logging package for Laravel with support for multiple storage backends (database, JSON lines files) and comprehensive configuration options. Extended to support both inbound (incoming API requests) and outbound (external API calls) logging.
 
 ## Implementation Phases
 
+### Completed Phases
+
 ### Phase 1: Foundation & Core Architecture
 **Priority**: HIGH
-**Status**: PENDING
+**Status**: COMPLETED ✅
 Set up basic structure, interfaces, configuration, and database schema.
 
 ### Phase 2: Storage Implementation
 **Priority**: HIGH
-**Status**: PENDING
+**Status**: COMPLETED ✅
 Implement database and JSON line storage drivers with data sanitization.
 
 ### Phase 3: Middleware Implementation
 **Priority**: HIGH
-**Status**: PENDING
+**Status**: COMPLETED ✅
 Create middleware to capture requests/responses with filtering and performance measurement.
 
 ### Phase 4: Cleanup & Maintenance
 **Priority**: MEDIUM
-**Status**: PENDING
+**Status**: COMPLETED ✅
 Implement automatic cleanup, retention policies, and maintenance commands.
 
 ### Phase 5: Monitoring & UI Integration Points
@@ -34,6 +36,33 @@ Define contracts for separate UI packages (Filament, Nova, etc.).
 **Priority**: ONGOING
 **Status**: ONGOING
 Comprehensive testing and documentation throughout all phases.
+
+### New Phases - Outbound API Logging Feature
+
+### Phase 7: Configuration & Feature Flags
+**Priority**: HIGH
+**Status**: PENDING
+Add feature flags for independent inbound/outbound control, update configuration structure.
+
+### Phase 8: Outbound Logging Core
+**Priority**: HIGH
+**Status**: PENDING
+Implement Guzzle middleware for capturing external API calls, integrate with existing storage.
+
+### Phase 9: Service Integration & Filtering
+**Priority**: HIGH
+**Status**: PENDING
+Add service/host-based filtering, correlation ID support, and service registry.
+
+### Phase 10: Enhanced Metadata & Monitoring
+**Priority**: MEDIUM
+**Status**: PENDING
+Extend metadata structure, add model scopes, implement retry tracking and performance metrics.
+
+### Phase 11: Documentation & Examples
+**Priority**: HIGH
+**Status**: PENDING
+Complete documentation, create integration examples, final testing.
 
 ## Development Workflow
 
