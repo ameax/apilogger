@@ -161,35 +161,86 @@ return [
             // Auto-register middleware for all Guzzle clients
             'auto_register' => env('API_LOGGER_OUTBOUND_AUTO_REGISTER', false),
 
-            // Service-based filtering
-            'services' => [
-                // Services to include (empty array = all services)
-                'include' => [
-                    // 'stripe',
-                    // 'paypal',
-                    // 'twilio',
-                ],
-
-                // Services to exclude from logging
-                'exclude' => [
-                    // 'internal-cache',
-                ],
-            ],
-
-            // Host-based filtering
-            'hosts' => [
-                // Hosts to include (empty array = all hosts)
-                'include' => [
-                    // 'api.stripe.com',
+            // Filtering configuration for outbound requests
+            'filters' => [
+                // Include filters (if specified, only matching requests are logged)
+                'include_hosts' => [
+                    // '*.stripe.com',
                     // 'api.paypal.com',
                 ],
+                'include_services' => [
+                    // 'App\Services\StripeService',
+                ],
+                'include_patterns' => [
+                    // '/api/*',
+                    // '/v1/*',
+                ],
+                'include_methods' => [
+                    // 'POST', 'PUT', 'DELETE',
+                ],
 
-                // Hosts to exclude from logging
-                'exclude' => [
-                    // 'localhost',
-                    // '127.0.0.1',
+                // Exclude filters (takes precedence over include filters)
+                'exclude_hosts' => [
+                    'localhost',
+                    '127.0.0.1',
+                    '*.local',
+                ],
+                'exclude_services' => [
+                    // 'App\Services\InternalCache',
+                ],
+                'exclude_patterns' => [
+                    // '/health',
+                    // '/metrics',
+                ],
+                'exclude_methods' => [
+                    // 'OPTIONS',
+                ],
+
+                // Cache filter results for performance
+                'cache_enabled' => env('API_LOGGER_OUTBOUND_CACHE', true),
+                'cache_ttl' => 60, // seconds
+
+                // Custom filter callbacks
+                'include_callback' => null, // callable that returns bool
+                'exclude_callback' => null, // callable that returns bool
+            ],
+
+            // Per-service configuration
+            'services' => [
+                'configs' => [
+                    // 'App\Services\StripeService' => [
+                    //     'enabled' => true,
+                    //     'log_level' => 'full',
+                    //     'sanitize_fields' => ['api_key', 'customer_id'],
+                    //     'timeout_ms' => 5000,
+                    //     'always_log_errors' => true,
+                    // ],
                 ],
             ],
+        ],
+
+        // Correlation ID configuration
+        'correlation' => [
+            'enabled' => env('API_LOGGER_CORRELATION_ENABLED', true),
+
+            // Header name for correlation ID
+            'header_name' => env('API_LOGGER_CORRELATION_HEADER', 'X-Correlation-ID'),
+
+            // Headers to check for existing correlation ID
+            'headers' => [
+                'X-Correlation-ID',
+                'X-Request-ID',
+                'X-Trace-ID',
+            ],
+
+            // Propagate correlation ID to outbound requests
+            'propagate' => env('API_LOGGER_CORRELATION_PROPAGATE', true),
+
+            // Add correlation ID to response headers
+            'add_to_response' => env('API_LOGGER_CORRELATION_RESPONSE', true),
+
+            // Generation method: 'uuid', 'ulid', 'timestamp'
+            'generation_method' => env('API_LOGGER_CORRELATION_METHOD', 'uuid'),
         ],
     ],
 

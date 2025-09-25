@@ -6,8 +6,10 @@ namespace Ameax\ApiLogger\Tests\Unit\Outbound;
 
 use Ameax\ApiLogger\DataTransferObjects\LogEntry;
 use Ameax\ApiLogger\Outbound\OutboundApiLogger;
+use Ameax\ApiLogger\Outbound\OutboundFilterService;
 use Ameax\ApiLogger\Services\DataSanitizer;
 use Ameax\ApiLogger\StorageManager;
+use Ameax\ApiLogger\Support\CorrelationIdManager;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Mockery;
@@ -18,18 +20,25 @@ beforeEach(function () {
 
     $this->config = [
         'enabled' => true,
-        'outbound' => [
-            'enabled' => true,
-            'excluded_hosts' => ['internal.example.com', '*.local'],
-        ],
-        'filtering' => [
-            'exclude_methods' => ['OPTIONS', 'HEAD'],
+        'features' => [
+            'outbound' => [
+                'enabled' => true,
+                'filters' => [
+                    'exclude_hosts' => ['internal.example.com', '*.local'],
+                    'exclude_methods' => ['OPTIONS', 'HEAD'],
+                ],
+            ],
         ],
     ];
+
+    $this->filterService = new OutboundFilterService($this->config);
+    $this->correlationIdManager = new CorrelationIdManager($this->config);
 
     $this->logger = new OutboundApiLogger(
         $this->storageManager,
         $this->dataSanitizer,
+        $this->filterService,
+        $this->correlationIdManager,
         $this->config
     );
 });
@@ -198,8 +207,10 @@ it('extracts metadata from request and options', function () {
 });
 
 it('respects outbound logging enabled flag', function () {
-    $config = array_merge($this->config, ['outbound' => ['enabled' => false]]);
-    $logger = new OutboundApiLogger($this->storageManager, $this->dataSanitizer, $config);
+    $config = array_merge($this->config, ['features' => ['outbound' => ['enabled' => false]]]);
+    $filterService = new OutboundFilterService($config);
+    $correlationIdManager = new CorrelationIdManager($config);
+    $logger = new OutboundApiLogger($this->storageManager, $this->dataSanitizer, $filterService, $correlationIdManager, $config);
 
     $request = new Request('GET', 'https://api.example.com/test');
 
@@ -211,8 +222,10 @@ it('respects outbound logging enabled flag', function () {
 });
 
 it('respects global enabled flag', function () {
-    $config = array_merge($this->config, ['enabled' => false]);
-    $logger = new OutboundApiLogger($this->storageManager, $this->dataSanitizer, $config);
+    $config = array_merge($this->config, ['features' => ['outbound' => ['enabled' => false]]]);
+    $filterService = new OutboundFilterService($config);
+    $correlationIdManager = new CorrelationIdManager($config);
+    $logger = new OutboundApiLogger($this->storageManager, $this->dataSanitizer, $filterService, $correlationIdManager, $config);
 
     $request = new Request('GET', 'https://api.example.com/test');
 

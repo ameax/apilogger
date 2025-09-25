@@ -1,6 +1,6 @@
 <?php
 
-namespace Aranes\ApiLogger\Tests\ProofOfConcept;
+namespace Ameax\ApiLogger\Tests\ProofOfConcept;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;

@@ -27,19 +27,23 @@ describe('Feature Flags Configuration', function () {
     });
 
     it('has empty service include filters by default', function () {
-        expect(config('apilogger.features.outbound.services.include'))->toBeArray()->toBeEmpty();
+        expect(config('apilogger.features.outbound.filters.include_services'))->toBeArray()->toBeEmpty();
     });
 
     it('has empty service exclude filters by default', function () {
-        expect(config('apilogger.features.outbound.services.exclude'))->toBeArray()->toBeEmpty();
+        expect(config('apilogger.features.outbound.filters.exclude_services'))->toBeArray()->toBeEmpty();
     });
 
     it('has empty host include filters by default', function () {
-        expect(config('apilogger.features.outbound.hosts.include'))->toBeArray()->toBeEmpty();
+        expect(config('apilogger.features.outbound.filters.include_hosts'))->toBeArray()->toBeEmpty();
     });
 
-    it('has empty host exclude filters by default', function () {
-        expect(config('apilogger.features.outbound.hosts.exclude'))->toBeArray()->toBeEmpty();
+    it('has default host exclude filters', function () {
+        $excludeHosts = config('apilogger.features.outbound.filters.exclude_hosts');
+        expect($excludeHosts)->toBeArray();
+        expect($excludeHosts)->toContain('localhost');
+        expect($excludeHosts)->toContain('127.0.0.1');
+        expect($excludeHosts)->toContain('*.local');
     });
 });
 

@@ -8,6 +8,7 @@ use Ameax\ApiLogger\Contracts\OutboundLoggerInterface;
 use Ameax\ApiLogger\DataTransferObjects\LogEntry;
 use Ameax\ApiLogger\Services\DataSanitizer;
 use Ameax\ApiLogger\StorageManager;
+use Ameax\ApiLogger\Support\CorrelationIdManager;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
@@ -19,6 +20,8 @@ class OutboundApiLogger implements OutboundLoggerInterface
     public function __construct(
         private StorageManager $storageManager,
         private DataSanitizer $dataSanitizer,
+        private OutboundFilterService $filterService,
+        private CorrelationIdManager $correlationIdManager,
         private array $config = []
     ) {
         $this->config = empty($config) ? Config::get('apilogger', []) : $config;
@@ -96,31 +99,24 @@ class OutboundApiLogger implements OutboundLoggerInterface
 
     public function shouldLog(RequestInterface $request, array $options = []): bool
     {
-        if (! $this->isOutboundLoggingEnabled()) {
-            return false;
-        }
-
         if (isset($options['log_disabled']) && $options['log_disabled'] === true) {
             return false;
         }
 
-        $host = $request->getUri()->getHost();
-        $excludedHosts = $this->config['outbound']['excluded_hosts'] ?? [];
+        $serviceClass = $options['_service_class'] ?? $options['service_class'] ?? null;
+        $metadata = $this->extractMetadata($request, $options);
 
-        foreach ($excludedHosts as $pattern) {
-            if (Str::is($pattern, $host)) {
-                return false;
+        // Use the filter service for comprehensive filtering
+        $shouldLog = $this->filterService->shouldLog($request, $serviceClass, $metadata);
+
+        // Check if we should always log errors
+        if (! $shouldLog && isset($options['_is_error']) && $options['_is_error'] === true) {
+            if ($serviceClass && $this->filterService->shouldLogErrors($serviceClass)) {
+                return true;
             }
         }
 
-        $method = strtolower($request->getMethod());
-        $excludedMethods = array_map('strtolower', $this->config['filtering']['exclude_methods'] ?? []);
-
-        if (in_array($method, $excludedMethods)) {
-            return false;
-        }
-
-        return true;
+        return $shouldLog;
     }
 
     public function extractMetadata(RequestInterface $request, array $options = []): array
@@ -135,17 +131,28 @@ class OutboundApiLogger implements OutboundLoggerInterface
             'query' => $uri->getQuery(),
         ];
 
-        if (isset($options['service_name'])) {
-            $metadata['service_name'] = $options['service_name'];
-        }
-
+        // Extract service information
         if (isset($options['service'])) {
             $metadata['service'] = $options['service'];
         }
 
-        if (isset($options['correlation_id'])) {
-            $metadata['correlation_id'] = $options['correlation_id'];
+        $serviceClass = $options['_service_class'] ?? $options['service_class'] ?? null;
+        if ($serviceClass) {
+            $metadata['service'] = $metadata['service'] ?? $serviceClass;
+            if (ServiceRegistry::isRegistered($serviceClass)) {
+                $metadata['service_name'] = ServiceRegistry::getServiceName($serviceClass);
+            }
         }
+
+        if (isset($options['service_name'])) {
+            $metadata['service_name'] = $options['service_name'];
+        }
+
+        // Handle correlation ID
+        $correlationId = $options['correlation_id']
+            ?? $this->correlationIdManager->extractFromArray($request->getHeaders())
+            ?? $this->correlationIdManager->getCorrelationId();
+        $metadata['correlation_id'] = $correlationId;
 
         if (isset($options['retry_attempt'])) {
             $metadata['retry_attempt'] = $options['retry_attempt'];
@@ -162,10 +169,7 @@ class OutboundApiLogger implements OutboundLoggerInterface
 
     private function isOutboundLoggingEnabled(): bool
     {
-        $enabled = $this->config['enabled'] ?? true;
-        $outboundEnabled = $this->config['outbound']['enabled'] ?? true;
-
-        return $enabled && $outboundEnabled;
+        return $this->config['features']['outbound']['enabled'] ?? false;
     }
 
     private function normalizeHeaders(array $headers): array

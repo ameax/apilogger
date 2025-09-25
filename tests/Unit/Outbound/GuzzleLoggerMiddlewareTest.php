@@ -74,7 +74,7 @@ it('logs requests with custom options', function () {
 
     $this->logger->shouldReceive('shouldLog')
         ->once()
-        ->with(Mockery::type(RequestInterface::class), Mockery::on(function ($opts) use ($options) {
+        ->with(Mockery::type(RequestInterface::class), Mockery::on(function ($opts) {
             return isset($opts['service_name']) && $opts['service_name'] === 'TestService'
                 && isset($opts['correlation_id']) && $opts['correlation_id'] === 'correlation-123'
                 && isset($opts['timeout']) && $opts['timeout'] === 30;
@@ -83,7 +83,7 @@ it('logs requests with custom options', function () {
 
     $this->logger->shouldReceive('logRequest')
         ->once()
-        ->with(Mockery::type(RequestInterface::class), Mockery::on(function ($opts) use ($options) {
+        ->with(Mockery::type(RequestInterface::class), Mockery::on(function ($opts) {
             return isset($opts['service_name']) && $opts['service_name'] === 'TestService'
                 && isset($opts['correlation_id']) && $opts['correlation_id'] === 'correlation-123'
                 && isset($opts['timeout']) && $opts['timeout'] === 30;
