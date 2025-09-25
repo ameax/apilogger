@@ -14,7 +14,7 @@ use GuzzleHttp\Psr7\Response;
 
 class UrlParameterSanitizationTest extends TestCase
 {
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 

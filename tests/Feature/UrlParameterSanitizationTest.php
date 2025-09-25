@@ -9,12 +9,11 @@ use Ameax\ApiLogger\Models\ApiLog;
 use Ameax\ApiLogger\Services\DataSanitizer;
 use Ameax\ApiLogger\Tests\TestCase;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Route;
 
 class UrlParameterSanitizationTest extends TestCase
 {
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
 

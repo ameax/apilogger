@@ -164,9 +164,7 @@ class DataSanitizer
      * Sanitize endpoint URL to remove or mask sensitive data.
      * This handles cases where tokens might be in the URL path itself.
      *
-     * @param  string  $endpoint
      * @param  array<string, mixed>  $queryParams
-     * @return string
      */
     public function sanitizeEndpoint(string $endpoint, array $queryParams = []): string
     {
@@ -182,7 +180,8 @@ class DataSanitizer
             // Rebuild query string if there are params
             if (! empty($sanitizedParams)) {
                 $queryString = http_build_query($sanitizedParams);
-                return $baseUrl . '?' . $queryString;
+
+                return $baseUrl.'?'.$queryString;
             }
 
             return $baseUrl;

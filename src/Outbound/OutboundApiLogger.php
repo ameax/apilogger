@@ -111,11 +111,11 @@ class OutboundApiLogger implements OutboundLoggerInterface
         $sanitizedQueryParams = $this->dataSanitizer->sanitizeQueryParams($queryParams);
 
         // Build sanitized endpoint URL (without sensitive query params in the URL itself)
-        $sanitizedEndpoint = $uri->getScheme() . '://' . $uri->getHost() .
-            ($uri->getPort() ? ':' . $uri->getPort() : '') . $uri->getPath();
+        $sanitizedEndpoint = $uri->getScheme().'://'.$uri->getHost().
+            ($uri->getPort() ? ':'.$uri->getPort() : '').$uri->getPath();
 
         // Add sanitized query params to metadata
-        if (!empty($sanitizedQueryParams)) {
+        if (! empty($sanitizedQueryParams)) {
             $metadata['query_params'] = $sanitizedQueryParams;
         }
 
