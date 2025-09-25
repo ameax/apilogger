@@ -107,7 +107,7 @@ class DatabaseStorage implements StorageInterface
 
         // Apply criteria filters
         if (isset($criteria['request_id'])) {
-            $query->where('request_id', $criteria['request_id']);
+            $query->where('id', $criteria['request_id']);
         }
 
         if (isset($criteria['method'])) {
@@ -157,7 +157,13 @@ class DatabaseStorage implements StorageInterface
      */
     public function findByRequestId(string $requestId): ?LogEntry
     {
-        $model = ApiLog::where('request_id', $requestId)->first();
+        // Try to find by correlation_identifier first (for UUIDs)
+        $model = ApiLog::where('correlation_identifier', $requestId)->first();
+
+        // If not found, try by ID (for numeric IDs)
+        if (! $model && is_numeric($requestId)) {
+            $model = ApiLog::find($requestId);
+        }
 
         return $model?->toLogEntry();
     }
@@ -171,7 +177,7 @@ class DatabaseStorage implements StorageInterface
 
         // Apply criteria filters
         if (isset($criteria['request_id'])) {
-            $query->where('request_id', $criteria['request_id']);
+            $query->where('id', $criteria['request_id']);
         }
 
         if (isset($criteria['method'])) {
@@ -216,7 +222,13 @@ class DatabaseStorage implements StorageInterface
     public function deleteByRequestId(string $requestId): bool
     {
         try {
-            $deleted = ApiLog::where('request_id', $requestId)->delete();
+            // Try to delete by correlation_identifier first
+            $deleted = ApiLog::where('correlation_identifier', $requestId)->delete();
+
+            // If not found, try by ID (for numeric IDs)
+            if ($deleted === 0 && is_numeric($requestId)) {
+                $deleted = ApiLog::destroy($requestId);
+            }
 
             return $deleted > 0;
         } catch (QueryException $e) {

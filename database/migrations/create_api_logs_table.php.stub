@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -15,9 +16,6 @@ return new class extends Migration
     {
         Schema::create('api_logs', function (Blueprint $table) {
             $table->id();
-
-            // Request identification
-            $table->string('request_id', 36)->unique()->index();
 
             // Request details
             $table->string('method', 10);
@@ -31,12 +29,18 @@ return new class extends Migration
             $table->json('response_body')->nullable();
             $table->decimal('response_time_ms', 10, 2);
 
+            // Request type and correlation
+            $table->enum('direction', ['inbound', 'outbound'])->default('inbound')->index();
+            $table->string('service', 100)->nullable()->index(); // NULL for inbound requests
+            $table->string('correlation_identifier', 36)->nullable()->index(); // For request chaining
+            $table->integer('retry_attempt')->default(0)->index(); // For retry tracking
+
             // User and request metadata
             $table->string('user_identifier')->nullable()->index();
             $table->string('ip_address', 45)->nullable()->index(); // Supports IPv6
             $table->text('user_agent')->nullable();
 
-            // Additional metadata
+            // Additional flexible metadata (without duplicating above fields)
             $table->json('metadata')->nullable();
 
             // Comment and marking fields
@@ -54,8 +58,15 @@ return new class extends Migration
             $table->index(['user_identifier', 'created_at']); // For user-specific queries
             $table->index(['endpoint', 'method']); // For endpoint analysis
             $table->index('response_time_ms'); // For performance analysis
+
+            // Composite indexes for common queries
+            $table->index(['direction', 'created_at']); // For filtering by type and time
+            $table->index(['service', 'response_code']); // For service health monitoring
+            $table->index(['service', 'created_at']); // For service timeline
+            $table->index(['correlation_identifier', 'created_at']); // For correlation chains
         });
     }
+
 
     /**
      * Reverse the migrations.

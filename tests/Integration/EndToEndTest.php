@@ -207,7 +207,7 @@ it('handles different content types correctly', function () {
 it('maintains data integrity across storage backends', function () {
     // Test data consistency when using multiple storage drivers
     $testData = [
-        'request_id' => 'integrity-test-'.uniqid(),
+        'correlation_identifier' => 'integrity-test-'.uniqid(),
         'method' => 'POST',
         'endpoint' => '/api/integrity',
         'request_body' => ['complex' => ['nested' => ['data' => 'structure']]],
@@ -220,7 +220,7 @@ it('maintains data integrity across storage backends', function () {
     config(['apilogger.storage.driver' => 'database']);
     $dbStorage = app(\Ameax\ApiLogger\StorageManager::class)->driver();
     $logEntry = new \Ameax\ApiLogger\DataTransferObjects\LogEntry(
-        requestId: $testData['request_id'],
+        requestId: $testData['correlation_identifier'],
         method: $testData['method'],
         endpoint: $testData['endpoint'],
         requestHeaders: [],
@@ -233,7 +233,7 @@ it('maintains data integrity across storage backends', function () {
     $dbStorage->store($logEntry);
 
     // Retrieve from database
-    $dbLog = ApiLog::where('request_id', $testData['request_id'])->first();
+    $dbLog = ApiLog::where('correlation_identifier', $testData['correlation_identifier'])->first();
     expect($dbLog)->not->toBeNull();
     expect($dbLog->request_body)->toBe($testData['request_body']);
     expect($dbLog->response_body)->toBe($testData['response_body']);

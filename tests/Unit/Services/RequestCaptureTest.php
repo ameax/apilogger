@@ -30,12 +30,12 @@ it('captures basic request information', function () {
 
     $captured = $this->requestCapture->capture($request);
 
-    expect($captured)->toHaveKeys(['method', 'endpoint', 'headers', 'body', 'query_params', 'ip_address', 'user_agent', 'user_identifier', 'request_id']);
+    expect($captured)->toHaveKeys(['method', 'endpoint', 'headers', 'body', 'query_params', 'ip_address', 'user_agent', 'user_identifier', 'correlation_identifier']);
     expect($captured['method'])->toBe('POST');
     expect($captured['endpoint'])->toBe('/api/users');
     expect($captured['body'])->toBe(['name' => 'John']);
     expect($captured['user_agent'])->toBe('TestAgent/1.0');
-    expect($captured['request_id'])->toBeString();
+    expect($captured['correlation_identifier'])->toBeString();
 });
 
 it('normalizes endpoint paths', function () {
@@ -205,7 +205,7 @@ it('uses existing correlation ID from headers', function () {
 
     $captured = $this->requestCapture->capture($request);
 
-    expect($captured['request_id'])->toBe('existing-correlation-id');
+    expect($captured['correlation_identifier'])->toBe('existing-correlation-id');
 });
 
 it('generates new request ID when no correlation ID exists', function () {
@@ -213,8 +213,8 @@ it('generates new request ID when no correlation ID exists', function () {
 
     $captured = $this->requestCapture->capture($request);
 
-    expect($captured['request_id'])->toBeString();
-    expect($captured['request_id'])->toMatch('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/');
+    expect($captured['correlation_identifier'])->toBeString();
+    expect($captured['correlation_identifier'])->toMatch('/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/');
 });
 
 it('calls custom enrichment callback', function () {
@@ -235,8 +235,12 @@ it('calls custom enrichment callback', function () {
 
     $captured = $requestCapture->capture($request);
 
-    expect($captured['metadata'])->toBe([
-        'custom_field' => 'custom_value',
-        'path_length' => 8,
-    ]);
+    expect($captured)->toHaveKey('metadata');
+    expect($captured['metadata'])->toHaveKey('custom_field');
+    expect($captured['metadata']['custom_field'])->toBe('custom_value');
+    expect($captured['metadata'])->toHaveKey('path_length');
+    expect($captured['metadata']['path_length'])->toBe(8);
+    expect($captured['metadata'])->toHaveKey('correlation_id');
+    expect($captured['metadata'])->toHaveKey('direction');
+    expect($captured['metadata']['direction'])->toBe('inbound');
 });

@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property int $id
- * @property string $request_id
  * @property string $method
  * @property string $endpoint
  * @property array|null $request_headers
@@ -20,6 +19,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property array|null $response_headers
  * @property mixed $response_body
  * @property float $response_time_ms
+ * @property string $direction
+ * @property string|null $service
+ * @property string|null $correlation_identifier
+ * @property int $retry_attempt
  * @property string|null $user_identifier
  * @property string|null $ip_address
  * @property string|null $user_agent
@@ -44,7 +47,6 @@ class ApiLog extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'request_id',
         'method',
         'endpoint',
         'request_headers',
@@ -53,6 +55,10 @@ class ApiLog extends Model
         'response_headers',
         'response_body',
         'response_time_ms',
+        'direction',
+        'service',
+        'correlation_identifier',
+        'retry_attempt',
         'user_identifier',
         'ip_address',
         'user_agent',
@@ -74,6 +80,7 @@ class ApiLog extends Model
         'metadata' => 'array',
         'response_time_ms' => 'float',
         'response_code' => 'integer',
+        'retry_attempt' => 'integer',
         'is_marked' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -84,8 +91,16 @@ class ApiLog extends Model
      */
     public function toLogEntry(): LogEntry
     {
+        // Build metadata array from native columns plus any extra metadata
+        $fullMetadata = array_merge($this->metadata ?? [], [
+            'direction' => $this->direction,
+            'service' => $this->service,
+            'correlation_id' => $this->correlation_identifier,
+            'retry_attempt' => $this->retry_attempt,
+        ]);
+
         return new LogEntry(
-            requestId: $this->request_id,
+            requestId: (string) $this->id,
             method: $this->method,
             endpoint: $this->endpoint,
             requestHeaders: $this->request_headers ?? [],
@@ -98,7 +113,7 @@ class ApiLog extends Model
             ipAddress: $this->ip_address,
             userAgent: $this->user_agent,
             createdAt: $this->created_at,
-            metadata: $this->metadata ?? [],
+            metadata: $fullMetadata,
         );
     }
 
@@ -107,8 +122,21 @@ class ApiLog extends Model
      */
     public static function fromLogEntry(LogEntry $entry): self
     {
+        $metadata = $entry->getMetadata();
+
+        // Extract native columns from metadata
+        $direction = $metadata['direction'] ?? 'inbound';
+        $service = $metadata['service'] ?? null;
+        // Use correlation_id from metadata, or fall back to requestId for tracking
+        $correlationId = $metadata['correlation_id'] ?? $entry->getRequestId();
+        $retryAttempt = $metadata['retry_attempt'] ?? 0;
+
+        // Remove these from metadata to avoid duplication
+        $cleanMetadata = array_diff_key($metadata, array_flip([
+            'direction', 'service', 'correlation_id', 'retry_attempt',
+        ]));
+
         return new self([
-            'request_id' => $entry->getRequestId(),
             'method' => $entry->getMethod(),
             'endpoint' => $entry->getEndpoint(),
             'request_headers' => $entry->getRequestHeaders(),
@@ -117,10 +145,14 @@ class ApiLog extends Model
             'response_headers' => $entry->getResponseHeaders(),
             'response_body' => $entry->getResponseBody(),
             'response_time_ms' => $entry->getResponseTimeMs(),
+            'direction' => $direction,
+            'service' => $service,
+            'correlation_identifier' => $correlationId,
+            'retry_attempt' => $retryAttempt,
             'user_identifier' => $entry->getUserIdentifier(),
             'ip_address' => $entry->getIpAddress(),
             'user_agent' => $entry->getUserAgent(),
-            'metadata' => $entry->getMetadata(),
+            'metadata' => $cleanMetadata ?: null,
             'created_at' => $entry->getCreatedAt(),
         ]);
     }
@@ -235,6 +267,157 @@ class ApiLog extends Model
     {
         return $query->where('is_marked', false)
             ->whereNull('comment');
+    }
+
+    /**
+     * Scope for inbound API requests.
+     */
+    public function scopeInbound(Builder $query): Builder
+    {
+        return $query->where('direction', 'inbound');
+    }
+
+    /**
+     * Scope for outbound API requests.
+     */
+    public function scopeOutbound(Builder $query): Builder
+    {
+        return $query->where('direction', 'outbound');
+    }
+
+    /**
+     * Scope for logs by service name.
+     */
+    public function scopeForService(Builder $query, string $service): Builder
+    {
+        return $query->where('service', $service);
+    }
+
+    /**
+     * Scope for logs with a specific correlation ID.
+     */
+    public function scopeWithCorrelation(Builder $query, string $correlationId): Builder
+    {
+        return $query->where('correlation_identifier', $correlationId);
+    }
+
+    /**
+     * Scope for failed requests (4xx and 5xx responses).
+     */
+    public function scopeFailedRequests(Builder $query): Builder
+    {
+        return $query->where('response_code', '>=', 400);
+    }
+
+    /**
+     * Scope for slow requests above a threshold.
+     *
+     * @param  float  $thresholdMs  Threshold in milliseconds
+     */
+    public function scopeSlowRequests(Builder $query, float $thresholdMs = 5000): Builder
+    {
+        return $query->where('response_time_ms', '>', $thresholdMs);
+    }
+
+    /**
+     * Scope for today's logs.
+     */
+    public function scopeToday(Builder $query): Builder
+    {
+        return $query->whereDate('created_at', Carbon::today());
+    }
+
+    /**
+     * Scope for logs with retry attempts.
+     */
+    public function scopeWithRetries(Builder $query): Builder
+    {
+        return $query->where('retry_attempt', '>', 0);
+    }
+
+    /**
+     * Scope for logs by retry attempt number.
+     */
+    public function scopeRetryAttempt(Builder $query, int $attempt): Builder
+    {
+        return $query->where('retry_attempt', $attempt);
+    }
+
+    // Direction is now a native column, no accessor needed
+
+    // Service is now a native column, no accessor needed
+
+    /**
+     * Get the correlation ID attribute (alias for correlation_identifier).
+     */
+    public function getCorrelationIdAttribute(): ?string
+    {
+        return $this->correlation_identifier;
+    }
+
+    // Retry attempt is now a native column, no accessor needed
+
+    /**
+     * Check if this is an outbound request.
+     */
+    public function getIsOutboundAttribute(): bool
+    {
+        return $this->direction === 'outbound';
+    }
+
+    /**
+     * Check if this is an inbound request.
+     */
+    public function getIsInboundAttribute(): bool
+    {
+        return $this->direction === 'inbound';
+    }
+
+    /**
+     * Get the connection time from metadata (if available).
+     */
+    public function getConnectionTimeAttribute(): ?float
+    {
+        return isset($this->metadata['connection_time_ms'])
+            ? (float) $this->metadata['connection_time_ms']
+            : null;
+    }
+
+    /**
+     * Get the total time from metadata (if available).
+     */
+    public function getTotalTimeAttribute(): ?float
+    {
+        return isset($this->metadata['total_time_ms'])
+            ? (float) $this->metadata['total_time_ms']
+            : $this->response_time_ms;
+    }
+
+    /**
+     * Check if this request was retried.
+     */
+    public function getWasRetriedAttribute(): bool
+    {
+        return $this->retry_attempt > 0;
+    }
+
+    /**
+     * Get all related logs in the same correlation chain.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, ApiLog>
+     */
+    public function getCorrelationChain()
+    {
+        if (! $this->correlation_identifier) {
+            $collection = new \Illuminate\Database\Eloquent\Collection;
+            $collection->push($this);
+
+            return $collection;
+        }
+
+        return static::withCorrelation($this->correlation_identifier)
+            ->orderBy('created_at')
+            ->get();
     }
 
     /**

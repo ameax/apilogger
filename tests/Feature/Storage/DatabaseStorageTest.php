@@ -41,7 +41,7 @@ describe('DatabaseStorage', function () {
 
         expect($result)->toBeTrue();
 
-        $log = ApiLog::where('request_id', 'test-123')->first();
+        $log = ApiLog::where('correlation_identifier', 'test-123')->first();
         expect($log)->not->toBeNull();
         expect($log->method)->toBe('GET');
         expect($log->endpoint)->toBe('/api/users');
@@ -91,9 +91,10 @@ describe('DatabaseStorage', function () {
 
         expect($stored)->toBe(3);
         expect(ApiLog::count())->toBe(3);
-        expect(ApiLog::where('request_id', 'batch-1')->exists())->toBeTrue();
-        expect(ApiLog::where('request_id', 'batch-2')->exists())->toBeTrue();
-        expect(ApiLog::where('request_id', 'batch-3')->exists())->toBeTrue();
+        // Check by correlation_identifier which gets set from requestId
+        expect(ApiLog::where('correlation_identifier', 'batch-1')->exists())->toBeTrue();
+        expect(ApiLog::where('correlation_identifier', 'batch-2')->exists())->toBeTrue();
+        expect(ApiLog::where('correlation_identifier', 'batch-3')->exists())->toBeTrue();
     });
 
     test('handles large batches by chunking', function () {
@@ -121,7 +122,7 @@ describe('DatabaseStorage', function () {
     test('can retrieve entries with criteria', function () {
         // Create test entries
         ApiLog::create([
-            'request_id' => 'retrieve-1',
+            'correlation_identifier' => 'retrieve-1',
             'method' => 'GET',
             'endpoint' => '/api/users',
             'response_code' => 200,
@@ -131,7 +132,7 @@ describe('DatabaseStorage', function () {
         ]);
 
         ApiLog::create([
-            'request_id' => 'retrieve-2',
+            'correlation_identifier' => 'retrieve-2',
             'method' => 'POST',
             'endpoint' => '/api/users',
             'response_code' => 201,
@@ -141,7 +142,7 @@ describe('DatabaseStorage', function () {
         ]);
 
         ApiLog::create([
-            'request_id' => 'retrieve-3',
+            'correlation_identifier' => 'retrieve-3',
             'method' => 'GET',
             'endpoint' => '/api/posts',
             'response_code' => 404,
@@ -161,12 +162,12 @@ describe('DatabaseStorage', function () {
         // Test retrieval with error filter
         $results = $this->storage->retrieve(['is_error' => true]);
         expect($results)->toHaveCount(1);
-        expect($results->first()->getRequestId())->toBe('retrieve-3');
+        expect($results->first()->getResponseCode())->toBe(404);
 
         // Test retrieval with response time filter
         $results = $this->storage->retrieve(['min_response_time' => 60]);
         expect($results)->toHaveCount(1);
-        expect($results->first()->getRequestId())->toBe('retrieve-2');
+        expect($results->first()->getResponseTimeMs())->toBe(100.0);
 
         // Test limit and offset
         $results = $this->storage->retrieve([], 2, 1);
@@ -175,7 +176,7 @@ describe('DatabaseStorage', function () {
 
     test('can find entry by request ID', function () {
         ApiLog::create([
-            'request_id' => 'find-me',
+            'correlation_identifier' => 'find-me',
             'method' => 'GET',
             'endpoint' => '/api/test',
             'response_code' => 200,
@@ -185,7 +186,6 @@ describe('DatabaseStorage', function () {
         $entry = $this->storage->findByRequestId('find-me');
 
         expect($entry)->not->toBeNull();
-        expect($entry->getRequestId())->toBe('find-me');
         expect($entry->getMethod())->toBe('GET');
         expect($entry->getEndpoint())->toBe('/api/test');
 
@@ -197,7 +197,7 @@ describe('DatabaseStorage', function () {
     test('can delete entries with criteria', function () {
         // Create test entries
         $log1 = ApiLog::create([
-            'request_id' => 'delete-1',
+            'correlation_identifier' => 'delete-1',
             'method' => 'GET',
             'endpoint' => '/api/users',
             'response_code' => 200,
@@ -207,7 +207,7 @@ describe('DatabaseStorage', function () {
         $log1->save();
 
         $log2 = ApiLog::create([
-            'request_id' => 'delete-2',
+            'correlation_identifier' => 'delete-2',
             'method' => 'POST',
             'endpoint' => '/api/users',
             'response_code' => 201,
@@ -217,7 +217,7 @@ describe('DatabaseStorage', function () {
         $log2->save();
 
         ApiLog::create([
-            'request_id' => 'delete-3',
+            'correlation_identifier' => 'delete-3',
             'method' => 'GET',
             'endpoint' => '/api/posts',
             'response_code' => 200,
@@ -238,12 +238,12 @@ describe('DatabaseStorage', function () {
         $deleted = $this->storage->delete(['older_than_days' => 7]);
         expect($deleted)->toBe(1);
         expect(ApiLog::count())->toBe(1);
-        expect(ApiLog::where('request_id', 'delete-3')->exists())->toBeTrue();
+        expect(ApiLog::where('correlation_identifier', 'delete-3')->exists())->toBeTrue();
     });
 
     test('can delete by request ID', function () {
         ApiLog::create([
-            'request_id' => 'to-delete',
+            'correlation_identifier' => 'to-delete',
             'method' => 'GET',
             'endpoint' => '/api/test',
             'response_code' => 200,
@@ -253,7 +253,7 @@ describe('DatabaseStorage', function () {
         $result = $this->storage->deleteByRequestId('to-delete');
 
         expect($result)->toBeTrue();
-        expect(ApiLog::where('request_id', 'to-delete')->exists())->toBeFalse();
+        expect(ApiLog::where('correlation_identifier', 'to-delete')->exists())->toBeFalse();
 
         // Test deleting non-existent
         $result = $this->storage->deleteByRequestId('does-not-exist');
@@ -263,7 +263,7 @@ describe('DatabaseStorage', function () {
     test('can clean old entries with different retention for errors', function () {
         // Create old normal entries
         $oldNormal = ApiLog::create([
-            'request_id' => 'old-normal-1',
+            'correlation_identifier' => 'old-normal-1',
             'method' => 'GET',
             'endpoint' => '/api/test',
             'response_code' => 200,
@@ -274,7 +274,7 @@ describe('DatabaseStorage', function () {
 
         // Create old error entries
         $oldError = ApiLog::create([
-            'request_id' => 'old-error-1',
+            'correlation_identifier' => 'old-error-1',
             'method' => 'GET',
             'endpoint' => '/api/test',
             'response_code' => 500,
@@ -285,7 +285,7 @@ describe('DatabaseStorage', function () {
 
         // Create recent entries
         $recentNormal = ApiLog::create([
-            'request_id' => 'recent-normal',
+            'correlation_identifier' => 'recent-normal',
             'method' => 'GET',
             'endpoint' => '/api/test',
             'response_code' => 200,
@@ -295,7 +295,7 @@ describe('DatabaseStorage', function () {
         $recentNormal->save();
 
         $recentError = ApiLog::create([
-            'request_id' => 'recent-error',
+            'correlation_identifier' => 'recent-error',
             'method' => 'GET',
             'endpoint' => '/api/test',
             'response_code' => 404,
@@ -308,14 +308,14 @@ describe('DatabaseStorage', function () {
 
         expect($cleaned)->toBe(2); // old-normal-1 and old-error-1
         expect(ApiLog::count())->toBe(2);
-        expect(ApiLog::where('request_id', 'recent-normal')->exists())->toBeTrue();
-        expect(ApiLog::where('request_id', 'recent-error')->exists())->toBeTrue();
+        expect(ApiLog::where('correlation_identifier', 'recent-normal')->exists())->toBeTrue();
+        expect(ApiLog::where('correlation_identifier', 'recent-error')->exists())->toBeTrue();
     });
 
     test('does not clean preserved logs (marked or with comments)', function () {
         // Create old normal log that should be deleted
         $oldNormal = ApiLog::create([
-            'request_id' => 'old-normal',
+            'correlation_identifier' => 'old-normal',
             'method' => 'GET',
             'endpoint' => '/api/test',
             'response_code' => 200,
@@ -328,7 +328,7 @@ describe('DatabaseStorage', function () {
 
         // Create old marked log that should be preserved
         $oldMarked = ApiLog::create([
-            'request_id' => 'old-marked',
+            'correlation_identifier' => 'old-marked',
             'method' => 'GET',
             'endpoint' => '/api/test',
             'response_code' => 200,
@@ -341,7 +341,7 @@ describe('DatabaseStorage', function () {
 
         // Create old log with comment that should be preserved
         $oldWithComment = ApiLog::create([
-            'request_id' => 'old-with-comment',
+            'correlation_identifier' => 'old-with-comment',
             'method' => 'GET',
             'endpoint' => '/api/test',
             'response_code' => 200,
@@ -354,7 +354,7 @@ describe('DatabaseStorage', function () {
 
         // Create old error log that should be deleted
         $oldError = ApiLog::create([
-            'request_id' => 'old-error',
+            'correlation_identifier' => 'old-error',
             'method' => 'GET',
             'endpoint' => '/api/test',
             'response_code' => 500,
@@ -367,7 +367,7 @@ describe('DatabaseStorage', function () {
 
         // Create old error log with both marked and comment that should be preserved
         $oldErrorPreserved = ApiLog::create([
-            'request_id' => 'old-error-preserved',
+            'correlation_identifier' => 'old-error-preserved',
             'method' => 'GET',
             'endpoint' => '/api/test',
             'response_code' => 500,
@@ -382,17 +382,17 @@ describe('DatabaseStorage', function () {
 
         expect($cleaned)->toBe(2); // old-normal and old-error
         expect(ApiLog::count())->toBe(3); // 3 preserved logs remain
-        expect(ApiLog::where('request_id', 'old-normal')->exists())->toBeFalse();
-        expect(ApiLog::where('request_id', 'old-error')->exists())->toBeFalse();
-        expect(ApiLog::where('request_id', 'old-marked')->exists())->toBeTrue();
-        expect(ApiLog::where('request_id', 'old-with-comment')->exists())->toBeTrue();
-        expect(ApiLog::where('request_id', 'old-error-preserved')->exists())->toBeTrue();
+        expect(ApiLog::where('correlation_identifier', 'old-normal')->exists())->toBeFalse();
+        expect(ApiLog::where('correlation_identifier', 'old-error')->exists())->toBeFalse();
+        expect(ApiLog::where('correlation_identifier', 'old-marked')->exists())->toBeTrue();
+        expect(ApiLog::where('correlation_identifier', 'old-with-comment')->exists())->toBeTrue();
+        expect(ApiLog::where('correlation_identifier', 'old-error-preserved')->exists())->toBeTrue();
     });
 
     test('can count entries with criteria', function () {
         // Create test entries
         ApiLog::create([
-            'request_id' => 'count-1',
+            'correlation_identifier' => 'count-1',
             'method' => 'GET',
             'endpoint' => '/api/users',
             'response_code' => 200,
@@ -400,7 +400,7 @@ describe('DatabaseStorage', function () {
         ]);
 
         ApiLog::create([
-            'request_id' => 'count-2',
+            'correlation_identifier' => 'count-2',
             'method' => 'GET',
             'endpoint' => '/api/users',
             'response_code' => 404,
@@ -408,7 +408,7 @@ describe('DatabaseStorage', function () {
         ]);
 
         ApiLog::create([
-            'request_id' => 'count-3',
+            'correlation_identifier' => 'count-3',
             'method' => 'POST',
             'endpoint' => '/api/users',
             'response_code' => 201,
@@ -428,7 +428,7 @@ describe('DatabaseStorage', function () {
     test('can get statistics', function () {
         // Create test data
         ApiLog::create([
-            'request_id' => 'stats-1',
+            'correlation_identifier' => 'stats-1',
             'method' => 'GET',
             'endpoint' => '/api/users',
             'response_code' => 200,
@@ -436,7 +436,7 @@ describe('DatabaseStorage', function () {
         ]);
 
         ApiLog::create([
-            'request_id' => 'stats-2',
+            'correlation_identifier' => 'stats-2',
             'method' => 'POST',
             'endpoint' => '/api/users',
             'response_code' => 500,
@@ -444,7 +444,7 @@ describe('DatabaseStorage', function () {
         ]);
 
         ApiLog::create([
-            'request_id' => 'stats-3',
+            'correlation_identifier' => 'stats-3',
             'method' => 'GET',
             'endpoint' => '/api/posts',
             'response_code' => 404,

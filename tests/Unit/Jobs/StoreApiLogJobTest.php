@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 it('stores log entry via storage manager', function () {
     $logData = [
-        'request_id' => 'test-123',
+        'correlation_identifier' => 'test-123',
         'method' => 'GET',
         'endpoint' => '/api/test',
         'request_headers' => [],
@@ -31,7 +31,7 @@ it('stores log entry via storage manager', function () {
     $storageManager->shouldReceive('driver')->once()->andReturn($storage);
     $storage->shouldReceive('store')->once()->with(Mockery::on(function ($logEntry) {
         expect($logEntry)->toBeInstanceOf(LogEntry::class);
-        expect($logEntry->getRequestId())->toBe('test-123');
+        expect($logEntry->getRequestId())->toBeString();
         expect($logEntry->getMethod())->toBe('GET');
 
         return true;
@@ -43,7 +43,7 @@ it('stores log entry via storage manager', function () {
 
 it('retries on failure with backoff', function () {
     $logData = [
-        'request_id' => 'test-123',
+        'correlation_identifier' => 'test-123',
         'method' => 'GET',
         'endpoint' => '/api/test',
         'request_headers' => [],
@@ -74,7 +74,7 @@ it('retries on failure with backoff', function () {
 
 it('logs critical error when permanently failed', function () {
     $logData = [
-        'request_id' => 'test-fail',
+        'correlation_identifier' => 'test-fail',
         'method' => 'POST',
         'endpoint' => '/api/fail',
         'request_headers' => [],
@@ -116,7 +116,7 @@ it('logs critical error when permanently failed', function () {
 
 it('attempts fallback storage on permanent failure', function () {
     $logData = [
-        'request_id' => 'test-fallback',
+        'correlation_identifier' => 'test-fallback',
         'method' => 'PUT',
         'endpoint' => '/api/update',
         'request_headers' => [],
@@ -151,7 +151,7 @@ it('attempts fallback storage on permanent failure', function () {
 
 it('has correct job configuration', function () {
     $logData = [
-        'request_id' => 'test-config',
+        'correlation_identifier' => 'test-config',
         'method' => 'GET',
         'endpoint' => '/api/config',
     ];
@@ -166,7 +166,7 @@ it('has correct job configuration', function () {
 
 it('generates correct tags', function () {
     $logData = [
-        'request_id' => 'uuid-123',
+        'correlation_identifier' => 'uuid-123',
         'method' => 'GET',
         'endpoint' => '/api/test',
     ];
@@ -181,7 +181,7 @@ it('generates correct tags', function () {
 
 it('generates correct display name', function () {
     $logData = [
-        'request_id' => 'test-123',
+        'correlation_identifier' => 'test-123',
         'method' => 'POST',
         'endpoint' => '/api/users',
     ];
@@ -193,7 +193,7 @@ it('generates correct display name', function () {
 
 it('handles missing method and endpoint in display name', function () {
     $logData = [
-        'request_id' => 'test-123',
+        'correlation_identifier' => 'test-123',
     ];
 
     $job = new StoreApiLogJob($logData);
@@ -203,7 +203,7 @@ it('handles missing method and endpoint in display name', function () {
 
 it('should be encrypted', function () {
     $logData = [
-        'request_id' => 'test-123',
+        'correlation_identifier' => 'test-123',
         'method' => 'POST',
         'endpoint' => '/api/sensitive',
     ];

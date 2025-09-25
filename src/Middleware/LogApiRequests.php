@@ -168,7 +168,7 @@ class LogApiRequests
 
             // Create log entry
             $logEntry = new LogEntry(
-                requestId: $requestData['request_id'],
+                requestId: $requestData['correlation_identifier'] ?? $requestData['request_id'] ?? '',
                 method: $requestData['method'],
                 endpoint: $requestData['endpoint'],
                 requestHeaders: $sanitizedRequestHeaders,
@@ -220,7 +220,7 @@ class LogApiRequests
 
             // Create log entry for the error
             $logEntry = new LogEntry(
-                requestId: $requestData['request_id'],
+                requestId: $requestData['correlation_identifier'] ?? $requestData['request_id'] ?? '',
                 method: $requestData['method'],
                 endpoint: $requestData['endpoint'],
                 requestHeaders: $this->sanitizer->sanitizeHeaders($requestData['headers'] ?? []),

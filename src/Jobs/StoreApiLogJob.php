@@ -134,7 +134,7 @@ class StoreApiLogJob implements ShouldQueue
     {
         return [
             'api-logger',
-            'request-id:'.($this->logData['request_id'] ?? 'unknown'),
+            'request-id:'.($this->logData['correlation_identifier'] ?? 'unknown'),
         ];
     }
 

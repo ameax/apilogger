@@ -23,6 +23,8 @@ class RequestCapture
      */
     public function capture(Request $request): array
     {
+        $correlationId = $this->generateRequestId($request);
+
         $data = [
             'method' => $request->getMethod(),
             'endpoint' => $this->getEndpoint($request),
@@ -32,16 +34,24 @@ class RequestCapture
             'ip_address' => $this->getIpAddress($request),
             'user_agent' => $request->userAgent(),
             'user_identifier' => $this->getUserIdentifier($request),
-            'request_id' => $this->generateRequestId($request),
+            'correlation_identifier' => $correlationId,
+        ];
+
+        // Start with base metadata
+        $metadata = [
+            'correlation_id' => $correlationId,
+            'direction' => 'inbound',
         ];
 
         // Add custom enrichment data
         if (isset($this->config['enrichment']['custom_callback']) && is_callable($this->config['enrichment']['custom_callback'])) {
             $customData = call_user_func($this->config['enrichment']['custom_callback'], $request);
             if (is_array($customData)) {
-                $data['metadata'] = $customData;
+                $metadata = array_merge($metadata, $customData);
             }
         }
+
+        $data['metadata'] = $metadata;
 
         return $data;
     }
@@ -110,6 +120,11 @@ class RequestCapture
         // Get the raw content
         $content = $request->getContent();
 
+        // Return null for empty content instead of empty string
+        if ($content === '') {
+            return null;
+        }
+
         // Check size limit
         if ($maxBodySize > 0 && strlen($content) > $maxBodySize) {
             return [
@@ -130,7 +145,10 @@ class RequestCapture
         // Try to parse form data
         if (str_contains($contentType, 'application/x-www-form-urlencoded') ||
             str_contains($contentType, 'multipart/form-data')) {
-            return $request->all();
+            $formData = $request->all();
+
+            // Return null if form data is empty
+            return empty($formData) ? null : $formData;
         }
 
         // Return raw content for other types
