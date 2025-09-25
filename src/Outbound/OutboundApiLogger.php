@@ -59,20 +59,44 @@ class OutboundApiLogger implements OutboundLoggerInterface
         $requestBody = (string) $request->getBody();
         $request->getBody()->rewind();
 
+        // Convert empty string to null for proper storage
+        if ($requestBody === '') {
+            $requestBody = null;
+        } else {
+            // Try to decode JSON to store as array/object
+            $decoded = json_decode($requestBody, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $requestBody = $decoded;
+            }
+        }
+
         $responseBody = null;
         $responseCode = 0;
         $responseHeaders = [];
 
         if ($response !== null) {
-            $responseBody = (string) $response->getBody();
+            $responseBodyString = (string) $response->getBody();
             $response->getBody()->rewind();
             $responseCode = $response->getStatusCode();
             $responseHeaders = $this->normalizeHeaders($response->getHeaders());
+
+            // Convert empty string to null for proper storage
+            if ($responseBodyString === '') {
+                $responseBody = null;
+            } else {
+                // Try to decode JSON to store as array/object
+                $decoded = json_decode($responseBodyString, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $responseBody = $decoded;
+                } else {
+                    $responseBody = $responseBodyString;
+                }
+            }
         } elseif ($error !== null) {
             $responseCode = 500;
         }
 
-        $sanitizedRequestBody = $this->dataSanitizer->sanitizeBody($requestBody);
+        $sanitizedRequestBody = $requestBody !== null ? $this->dataSanitizer->sanitizeBody($requestBody) : null;
         $sanitizedResponseBody = $responseBody !== null ? $this->dataSanitizer->sanitizeBody($responseBody) : null;
         $sanitizedRequestHeaders = $this->dataSanitizer->sanitizeHeaders($this->normalizeHeaders($request->getHeaders()));
         $sanitizedResponseHeaders = $this->dataSanitizer->sanitizeHeaders($responseHeaders);

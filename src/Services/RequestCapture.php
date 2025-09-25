@@ -120,6 +120,11 @@ class RequestCapture
         // Get the raw content
         $content = $request->getContent();
 
+        // Return null for empty content instead of empty string
+        if ($content === '') {
+            return null;
+        }
+
         // Check size limit
         if ($maxBodySize > 0 && strlen($content) > $maxBodySize) {
             return [
@@ -140,7 +145,9 @@ class RequestCapture
         // Try to parse form data
         if (str_contains($contentType, 'application/x-www-form-urlencoded') ||
             str_contains($contentType, 'multipart/form-data')) {
-            return $request->all();
+            $formData = $request->all();
+            // Return null if form data is empty
+            return empty($formData) ? null : $formData;
         }
 
         // Return raw content for other types

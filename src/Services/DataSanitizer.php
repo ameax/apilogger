@@ -92,6 +92,24 @@ class DataSanitizer
      */
     public function sanitizeBody(mixed $body): mixed
     {
+        // Return null as-is
+        if ($body === null) {
+            return null;
+        }
+
+        // If it's already an array or object, sanitize directly without JSON encoding/decoding
+        if (is_array($body) || is_object($body)) {
+            return $this->sanitize($body);
+        }
+
+        // For strings, check if it's JSON and decode it
+        if (is_string($body)) {
+            $decoded = json_decode($body, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $this->sanitizeArray($decoded);
+            }
+        }
+
         return $this->sanitize($body);
     }
 
