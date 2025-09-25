@@ -3,8 +3,8 @@
 namespace Aranes\ApiLogger\Tests\ProofOfConcept;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Handler\CurlHandler;
+use GuzzleHttp\HandlerStack;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -16,7 +16,7 @@ class SimulatedExternalSdk
 {
     private Client $client;
 
-    public function __construct(Client $client = null)
+    public function __construct(?Client $client = null)
     {
         // SDK creates its own Guzzle client if none provided
         $this->client = $client ?? new Client([
@@ -31,6 +31,7 @@ class SimulatedExternalSdk
     public function getUser(int $userId): array
     {
         $response = $this->client->get("anything/users/{$userId}");
+
         return json_decode($response->getBody()->getContents(), true);
     }
 
@@ -42,6 +43,7 @@ class SimulatedExternalSdk
                 'X-SDK-Method' => 'createPost',
             ],
         ]);
+
         return json_decode($response->getBody()->getContents(), true);
     }
 
@@ -56,6 +58,7 @@ class SimulatedExternalSdk
                 ],
             ],
         ]);
+
         return json_decode($response->getBody()->getContents(), true);
     }
 }
@@ -64,7 +67,7 @@ it('cannot intercept SDK calls when SDK creates its own Guzzle client', function
     $capturedData = [];
 
     // This is what happens when an SDK creates its own client internally
-    $sdk = new SimulatedExternalSdk();
+    $sdk = new SimulatedExternalSdk;
 
     // We have no way to add middleware to the SDK's internal client
     $result = $sdk->getUser(123);
@@ -101,6 +104,7 @@ it('CAN intercept SDK calls when we provide a configured Guzzle client', functio
                         'status' => $response->getStatusCode(),
                         'duration_ms' => (microtime(true) - $startTime) * 1000,
                     ];
+
                     return $response;
                 }
             );
@@ -247,6 +251,7 @@ it('shows limitations when SDK does not accept client injection', function () {
         public function makeRequest(): array
         {
             $response = $this->client->get('anything');
+
             return json_decode($response->getBody()->getContents(), true);
         }
     }
@@ -254,7 +259,7 @@ it('shows limitations when SDK does not accept client injection', function () {
     $capturedData = [];
 
     // We cannot inject our middleware into this SDK
-    $sdk = new SealedExternalSdk();
+    $sdk = new SealedExternalSdk;
     $result = $sdk->makeRequest();
 
     expect($result)->toBeArray();
@@ -284,7 +289,7 @@ it('can use global handler to intercept ALL Guzzle clients if set early enough',
     };
 
     // Create a custom default handler
-    $stack = HandlerStack::create(new CurlHandler());
+    $stack = HandlerStack::create(new CurlHandler);
     $stack->push($globalMiddleware, 'global_apilogger');
 
     // This would need to be done very early in the application bootstrap

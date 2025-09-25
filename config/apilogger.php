@@ -142,6 +142,59 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Feature Flags
+    |--------------------------------------------------------------------------
+    |
+    | Enable or disable specific logging features independently.
+    |
+    */
+    'features' => [
+        // Inbound API logging (incoming requests to your application)
+        'inbound' => [
+            'enabled' => env('API_LOGGER_INBOUND_ENABLED', true),
+        ],
+
+        // Outbound API logging (external API calls made by your application)
+        'outbound' => [
+            'enabled' => env('API_LOGGER_OUTBOUND_ENABLED', false),
+
+            // Auto-register middleware for all Guzzle clients
+            'auto_register' => env('API_LOGGER_OUTBOUND_AUTO_REGISTER', false),
+
+            // Service-based filtering
+            'services' => [
+                // Services to include (empty array = all services)
+                'include' => [
+                    // 'stripe',
+                    // 'paypal',
+                    // 'twilio',
+                ],
+
+                // Services to exclude from logging
+                'exclude' => [
+                    // 'internal-cache',
+                ],
+            ],
+
+            // Host-based filtering
+            'hosts' => [
+                // Hosts to include (empty array = all hosts)
+                'include' => [
+                    // 'api.stripe.com',
+                    // 'api.paypal.com',
+                ],
+
+                // Hosts to exclude from logging
+                'exclude' => [
+                    // 'localhost',
+                    // '127.0.0.1',
+                ],
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Middleware Configuration
     |--------------------------------------------------------------------------
     |

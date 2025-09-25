@@ -13,6 +13,7 @@ use Ameax\ApiLogger\Services\RequestCapture;
 use Ameax\ApiLogger\Services\ResponseCapture;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Log;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -50,8 +51,8 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
      */
     public function packageBooted(): void
     {
-        // Register middleware
-        $this->registerMiddleware();
+        // Register features based on configuration
+        $this->registerFeatures();
     }
 
     /**
@@ -126,9 +127,30 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
     }
 
     /**
-     * Register the package middleware.
+     * Register features based on configuration.
      */
-    protected function registerMiddleware(): void
+    protected function registerFeatures(): void
+    {
+        // Check if package is enabled at all
+        if (! config('apilogger.enabled', true)) {
+            return;
+        }
+
+        // Register inbound API logging
+        if (config('apilogger.features.inbound.enabled', true)) {
+            $this->registerInboundLogging();
+        }
+
+        // Register outbound API logging
+        if (config('apilogger.features.outbound.enabled', false)) {
+            $this->registerOutboundLogging();
+        }
+    }
+
+    /**
+     * Register inbound API logging (incoming requests).
+     */
+    protected function registerInboundLogging(): void
     {
         // Get the router
         $router = $this->app->make(Router::class);
@@ -146,6 +168,26 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
         if (config('apilogger.middleware.api_group', true)) {
             $router->pushMiddlewareToGroup('api', LogApiRequests::class);
         }
+    }
+
+    /**
+     * Register outbound API logging (external API calls).
+     */
+    protected function registerOutboundLogging(): void
+    {
+        // Check if Guzzle is available
+        if (! class_exists(\GuzzleHttp\Client::class)) {
+            Log::warning(
+                'ApiLogger: Outbound logging is enabled but Guzzle is not installed. '.
+                'Please install guzzlehttp/guzzle to use outbound API logging.'
+            );
+
+            return;
+        }
+
+        // TODO: Register Guzzle middleware in Phase 8
+        // This will be implemented in the next phase
+        // For now, we just check that Guzzle is available
     }
 
     /**
