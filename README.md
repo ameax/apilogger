@@ -20,6 +20,7 @@ A powerful, flexible, and performant API request/response logging package for La
 - 🔗 **Outbound API Logging**: Track external API calls with Guzzle middleware
 - 🔍 **Correlation IDs**: Link related requests across inbound and outbound calls
 - 🏢 **Service Registry**: Manage and configure multiple external services
+- 📤 **HAR & HTML Export**: Export logs in industry-standard HAR format or standalone HTML
 
 ## Requirements
 
@@ -320,6 +321,201 @@ Configure which external services to log:
         ],
     ],
 ],
+```
+
+## Exporting API Logs
+
+The package includes powerful export functionality for sharing API logs with external partners, debugging in professional tools, or archiving logs in standardized formats.
+
+### Export Formats
+
+#### HAR (HTTP Archive) Format
+
+Export logs in the [W3C HAR 1.2 specification](http://www.softwareishard.com/blog/har-12-spec/) format, which is compatible with industry-standard tools:
+
+```php
+use Ameax\ApiLogger\Models\ApiLog;
+use Ameax\ApiLogger\Services\Export\HarExportService;
+
+$log = ApiLog::find(123);
+$harExport = app(HarExportService::class);
+
+// Generate HAR format
+$har = $harExport->generate($log);
+
+// Save to file
+file_put_contents('api-log.har', json_encode($har, JSON_PRETTY_PRINT));
+
+// Or return as download response
+return response()->json($har)
+    ->header('Content-Type', 'application/json')
+    ->header('Content-Disposition', 'attachment; filename="api-log.har"');
+```
+
+**HAR files can be opened in:**
+- **Chrome DevTools** (Network tab → Import HAR file)
+- **Firefox Developer Tools** (Network Monitor → Import)
+- **Postman** (Import → Raw text)
+- **Insomnia** (Import Data → From File)
+- **Charles Proxy**, **Fiddler**, and other HTTP debugging tools
+- Online viewers like [HAR Viewer](http://www.softwareishard.com/har/viewer/)
+
+**Use Cases:**
+- Share API request/response details with external API providers for debugging
+- Analyze request/response timing and performance
+- Document API behavior with exact request/response examples
+- Create test fixtures from real API interactions
+- Archive API logs in a standardized, tool-independent format
+
+**HAR Format Features:**
+- Complete request details (method, URL, headers, body)
+- Full response information (status, headers, body, timing)
+- Custom fields for API Logger metadata (correlation ID, service name, retry attempts)
+- Standard format ensures compatibility across tools
+- JSON-based, human-readable structure
+
+#### HTML Export
+
+Export logs as standalone HTML files with inline CSS for easy viewing and sharing:
+
+```php
+use Ameax\ApiLogger\Models\ApiLog;
+use Ameax\ApiLogger\Services\Export\HtmlExportService;
+
+$log = ApiLog::find(123);
+$htmlExport = app(HtmlExportService::class);
+
+// Generate HTML
+$html = $htmlExport->generate($log);
+
+// Save to file
+file_put_contents('api-log.html', $html);
+
+// Or return as download response
+return response($html)
+    ->header('Content-Type', 'text/html')
+    ->header('Content-Disposition', 'attachment; filename="api-log.html"');
+```
+
+**HTML Export Features:**
+- Standalone HTML file with inline CSS (no external dependencies)
+- Syntax-highlighted JSON for request/response bodies
+- Color-coded status badges and response times
+- Responsive design for viewing on any device
+- Professional appearance suitable for client communication
+- Print-friendly layout
+
+**Use Cases:**
+- Share API logs via email with non-technical stakeholders
+- Create printable API documentation
+- Archive logs in a human-readable format
+- Quick visual inspection without opening specialized tools
+- Embed in reports or documentation
+
+### Export Service Architecture
+
+Both export services extend a common base class for code reuse:
+
+```php
+namespace Ameax\ApiLogger\Services\Export;
+
+// Base class with shared methods
+abstract class ApiLogExportService
+{
+    protected function buildHeaders(?array $headers): array;
+    protected function buildQueryString(?array $parameters): array;
+    protected function encodeBody(?array $body): string;
+    protected function getMimeType(?array $headers, string $default): string;
+    protected function getStatusText(int $code): string;
+}
+
+// HAR export implementation
+class HarExportService extends ApiLogExportService
+{
+    public function generate(ApiLog $apiLog): array;
+}
+
+// HTML export implementation
+class HtmlExportService extends ApiLogExportService
+{
+    public function generate(ApiLog $apiLog): string;
+}
+```
+
+### Example: Bulk Export
+
+Export multiple logs at once:
+
+```php
+use Ameax\ApiLogger\Models\ApiLog;
+use Ameax\ApiLogger\Services\Export\HarExportService;
+
+$logs = ApiLog::where('service', 'Stripe API')
+    ->where('response_code', '>=', 400)
+    ->get();
+
+$harExport = app(HarExportService::class);
+
+// Create HAR file with multiple entries
+$har = [
+    'log' => [
+        'version' => '1.2',
+        'creator' => [
+            'name' => 'API Logger',
+            'version' => '1.0',
+        ],
+        'entries' => $logs->map(fn($log) =>
+            $harExport->generate($log)['log']['entries'][0]
+        )->all(),
+    ],
+];
+
+file_put_contents('stripe-errors.har', json_encode($har, JSON_PRETTY_PRINT));
+```
+
+### Integration with UI Frameworks
+
+The export services are framework-agnostic and can be easily integrated into any UI:
+
+**Filament Example:**
+```php
+use Filament\Actions\Action;
+use Ameax\ApiLogger\Services\Export\HarExportService;
+
+Action::make('export_har')
+    ->label('Export HAR')
+    ->icon('heroicon-o-arrow-down-tray')
+    ->action(function (ApiLog $record) {
+        $harExport = app(HarExportService::class);
+        $har = $harExport->generate($record);
+
+        return response()->streamDownload(
+            fn () => print(json_encode($har, JSON_PRETTY_PRINT)),
+            sprintf('api-log-%s.har', $record->id),
+            ['Content-Type' => 'application/json']
+        );
+    });
+```
+
+**Laravel Livewire Example:**
+```php
+use Livewire\Component;
+use Ameax\ApiLogger\Services\Export\HtmlExportService;
+
+class ApiLogViewer extends Component
+{
+    public function downloadHtml($logId)
+    {
+        $log = ApiLog::findOrFail($logId);
+        $htmlExport = app(HtmlExportService::class);
+        $html = $htmlExport->generate($log);
+
+        return response()->streamDownload(
+            fn () => print($html),
+            "api-log-{$logId}.html"
+        );
+    }
+}
 ```
 
 ## Maintenance Commands
