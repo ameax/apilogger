@@ -114,7 +114,6 @@ class OutboundApiLogger implements OutboundLoggerInterface
         $sanitizedEndpoint = $uri->getScheme().'://'.$uri->getHost().
             ($uri->getPort() ? ':'.$uri->getPort() : '').$uri->getPath();
 
-
         $logEntry = new LogEntry(
             requestId: $requestId,
             method: $request->getMethod(),

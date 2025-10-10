@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Ameax\ApiLogger\Services\Export;
 
-use Ameax\ApiLogger\Models\ApiLog;
-
 abstract class ApiLogExportService
 {
     /**

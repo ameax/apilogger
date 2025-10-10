@@ -41,7 +41,7 @@ class HarExportService extends ApiLogExportService
             'time' => (float) $apiLog->response_time_ms,
             'request' => $this->buildRequest($apiLog),
             'response' => $this->buildResponse($apiLog),
-            'cache' => new \stdClass(),
+            'cache' => new \stdClass,
             'timings' => $this->buildTimings($apiLog),
         ];
 
