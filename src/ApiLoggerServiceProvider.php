@@ -33,6 +33,7 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
             ->name('apilogger')
             ->hasConfigFile()
             ->hasMigration('create_api_logs_table')
+            ->hasViews()
             ->hasCommand(ApiLoggerCommand::class);
     }
 
