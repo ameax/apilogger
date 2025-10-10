@@ -13,6 +13,7 @@ class HtmlExportService extends ApiLogExportService
      */
     public function generate(ApiLog $apiLog): string
     {
+        /** @phpstan-ignore argument.type */
         return view('apilogger::exports.api-log', [
             'apiLog' => $apiLog,
             'formatJson' => function ($data) {

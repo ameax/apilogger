@@ -84,6 +84,8 @@ class HarExportService extends ApiLogExportService
      */
     protected function buildRequest(ApiLog $apiLog): array
     {
+        $requestBody = $this->encodeBody($apiLog->request_body);
+
         $request = [
             'method' => $apiLog->method,
             'url' => $apiLog->endpoint,
@@ -92,14 +94,14 @@ class HarExportService extends ApiLogExportService
             'headers' => $this->buildHeaders($apiLog->request_headers),
             'queryString' => $this->buildQueryString($apiLog->request_parameters),
             'headersSize' => -1,
-            'bodySize' => $apiLog->request_size,
+            'bodySize' => strlen($requestBody),
         ];
 
         // Add POST data if present
         if ($apiLog->request_body) {
             $request['postData'] = [
                 'mimeType' => $this->getMimeType($apiLog->request_headers, 'application/json'),
-                'text' => $this->encodeBody($apiLog->request_body),
+                'text' => $requestBody,
             ];
         }
 
@@ -113,6 +115,9 @@ class HarExportService extends ApiLogExportService
      */
     protected function buildResponse(ApiLog $apiLog): array
     {
+        $responseBody = $this->encodeBody($apiLog->response_body);
+        $bodySize = strlen($responseBody);
+
         return [
             'status' => $apiLog->response_code,
             'statusText' => $this->getStatusText($apiLog->response_code),
@@ -120,13 +125,13 @@ class HarExportService extends ApiLogExportService
             'cookies' => [],
             'headers' => $this->buildHeaders($apiLog->response_headers),
             'content' => [
-                'size' => $apiLog->response_size,
+                'size' => $bodySize,
                 'mimeType' => $this->getMimeType($apiLog->response_headers, 'application/json'),
-                'text' => $this->encodeBody($apiLog->response_body),
+                'text' => $responseBody,
             ],
             'redirectURL' => '',
             'headersSize' => -1,
-            'bodySize' => $apiLog->response_size,
+            'bodySize' => $bodySize,
         ];
     }
 
