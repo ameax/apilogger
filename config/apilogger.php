@@ -165,6 +165,11 @@ return [
             // Auto-register middleware for all Guzzle clients
             'auto_register' => env('API_LOGGER_OUTBOUND_AUTO_REGISTER', false),
 
+            // PSR-18 Client logging support (for Typesense, etc.)
+            'psr18' => [
+                'enabled' => env('API_LOGGER_PSR18_ENABLED', true),
+            ],
+
             // Filtering configuration for outbound requests
             'filters' => [
                 // Include filters (if specified, only matching requests are logged)

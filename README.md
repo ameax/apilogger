@@ -17,10 +17,11 @@ A powerful, flexible, and performant API request/response logging package for La
 - 🧹 **Auto-Cleanup**: Configurable retention policies with different durations for errors
 - 🔄 **Fallback Support**: Multiple storage drivers with automatic failover
 - 🎨 **Highly Configurable**: Extensive configuration options for every use case
-- 🔗 **Outbound API Logging**: Track external API calls with Guzzle middleware
+- 🔗 **Outbound API Logging**: Track external API calls with Guzzle and PSR-18 clients
 - 🔍 **Correlation IDs**: Link related requests across inbound and outbound calls
 - 🏢 **Service Registry**: Manage and configure multiple external services
 - 📤 **HAR & HTML Export**: Export logs in industry-standard HAR format or standalone HTML
+- 🌐 **PSR-18 Support**: Log any PSR-18 compliant HTTP client (Typesense, HTTPlug, etc.)
 
 ## Requirements
 
@@ -322,6 +323,38 @@ Configure which external services to log:
     ],
 ],
 ```
+
+### PSR-18 HTTP Client Logging
+
+ApiLogger supports logging for any PSR-18 compliant HTTP client, including HTTPlug-based libraries like Typesense, Symfony HttpClient, and more.
+
+```php
+use Ameax\ApiLogger\Outbound\Psr18ClientFactory;
+use Http\Discovery\Psr18ClientDiscovery;
+
+// Get base PSR-18 client
+$baseClient = Psr18ClientDiscovery::find();
+
+// Wrap with logging
+$factory = app(Psr18ClientFactory::class);
+$loggingClient = $factory->create($baseClient, [
+    'service_class' => App\Services\MyApiService::class,
+    'service_name' => 'My API Service',
+]);
+
+// All requests with this client are now logged
+$response = $loggingClient->sendRequest($request);
+```
+
+**For detailed PSR-18 integration guides, architecture information, and troubleshooting:**
+- [PSR-18 HTTP Client Support Documentation](docs/psr18-support.md)
+
+**Key Features:**
+- Compatible with any PSR-18 client (Symfony HttpClient, Guzzle 7+, etc.)
+- Works with HTTPlug-based libraries (Typesense, php-http, etc.)
+- Supports HttpMethodsClient wrapper pattern
+- Service-based filtering and configuration
+- Automatic correlation ID propagation
 
 ## Exporting API Logs
 

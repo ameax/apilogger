@@ -10,6 +10,7 @@ use Ameax\ApiLogger\Contracts\StorageInterface;
 use Ameax\ApiLogger\Middleware\LogApiRequests;
 use Ameax\ApiLogger\Outbound\OutboundApiLogger;
 use Ameax\ApiLogger\Outbound\OutboundFilterService;
+use Ameax\ApiLogger\Outbound\Psr18ClientFactory;
 use Ameax\ApiLogger\Outbound\ServiceDetector;
 use Ameax\ApiLogger\Services\DataSanitizer;
 use Ameax\ApiLogger\Services\FilterService;
@@ -156,6 +157,15 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
         // Bind interface to implementation
         $this->app->bind(OutboundLoggerInterface::class, OutboundApiLogger::class);
 
+        // Register PSR-18 Client Factory
+        $this->app->singleton(Psr18ClientFactory::class, function ($app) {
+            return new Psr18ClientFactory(
+                logger: $app->make(OutboundLoggerInterface::class),
+                correlationIdManager: $app->make(CorrelationIdManager::class),
+                serviceDetector: $app->make(ServiceDetector::class)
+            );
+        });
+
         // Register aliases
         $this->app->alias(StorageManager::class, 'apilogger.storage');
         $this->app->alias(DataSanitizer::class, 'apilogger.sanitizer');
@@ -166,6 +176,7 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
         $this->app->alias(CorrelationIdManager::class, 'apilogger.correlation');
         $this->app->alias(OutboundFilterService::class, 'apilogger.outbound.filter');
         $this->app->alias(OutboundApiLogger::class, 'apilogger.outbound.logger');
+        $this->app->alias(Psr18ClientFactory::class, 'apilogger.psr18.factory');
     }
 
     /**
