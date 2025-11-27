@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Ameax\ApiLogger;
 
 use Ameax\ApiLogger\Commands\ApiLoggerCommand;
+use Ameax\ApiLogger\Commands\CleanApiLogsCommand;
 use Ameax\ApiLogger\Contracts\OutboundLoggerInterface;
 use Ameax\ApiLogger\Contracts\StorageInterface;
 use Ameax\ApiLogger\Middleware\LogApiRequests;
@@ -35,7 +36,8 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasMigration('create_api_logs_table')
             ->hasViews()
-            ->hasCommand(ApiLoggerCommand::class);
+            ->hasCommand(ApiLoggerCommand::class)
+            ->hasCommand(CleanApiLogsCommand::class);
     }
 
     /**

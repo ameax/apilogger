@@ -18,6 +18,8 @@ class DatabaseStorage implements StorageInterface
 {
     protected Connection $connection;
 
+    protected string $connectionName;
+
     protected string $table;
 
     protected int $batchSize;
@@ -26,8 +28,8 @@ class DatabaseStorage implements StorageInterface
         protected DatabaseManager $db,
         array $config = []
     ) {
-        $connectionName = $config['connection'] ?? config('database.default');
-        $this->connection = $this->db->connection($connectionName);
+        $this->connectionName = $config['connection'] ?? config('database.default');
+        $this->connection = $this->db->connection($this->connectionName);
         $this->table = $config['table'] ?? 'api_logs';
         $this->batchSize = $config['batch_size'] ?? 100;
     }
@@ -251,16 +253,20 @@ class DatabaseStorage implements StorageInterface
         try {
             // Delete normal logs older than specified days (excluding preserved logs)
             $normalCutoff = Carbon::now()->subDays($normalDays);
-            $deleted += ApiLog::where('response_code', '<', 400)
+            $deleted += $this->connection->table($this->table)
+                ->where('response_code', '<', 400)
                 ->where('created_at', '<', $normalCutoff)
-                ->notPreserved()
+                ->where('is_marked', false)
+                ->whereNull('comment')
                 ->delete();
 
             // Delete error logs older than specified days (excluding preserved logs)
             $errorCutoff = Carbon::now()->subDays($errorDays);
-            $deleted += ApiLog::where('response_code', '>=', 400)
+            $deleted += $this->connection->table($this->table)
+                ->where('response_code', '>=', 400)
                 ->where('created_at', '<', $errorCutoff)
-                ->notPreserved()
+                ->where('is_marked', false)
+                ->whereNull('comment')
                 ->delete();
         } catch (QueryException $e) {
             Log::error('Failed to clean old API log entries', [
