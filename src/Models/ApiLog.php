@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ameax\ApiLogger\Models;
 
+use Ameax\ApiLogger\Casts\JsonCast;
 use Ameax\ApiLogger\DataTransferObjects\LogEntry;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -91,12 +92,12 @@ class ApiLog extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'request_headers' => 'array',
-        'request_body' => 'array',
-        'request_parameters' => 'array',
-        'response_headers' => 'array',
-        'response_body' => 'array',
-        'metadata' => 'array',
+        'request_headers' => JsonCast::class,
+        'request_body' => JsonCast::class,
+        'request_parameters' => JsonCast::class,
+        'response_headers' => JsonCast::class,
+        'response_body' => JsonCast::class,
+        'metadata' => JsonCast::class,
         'response_time_ms' => 'float',
         'response_code' => 'integer',
         'retry_attempt' => 'integer',
