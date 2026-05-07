@@ -84,6 +84,7 @@ class ApiLog extends Model
         'metadata',
         'comment',
         'is_marked',
+        'created_at',
     ];
 
     /**

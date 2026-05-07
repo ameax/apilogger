@@ -13,6 +13,7 @@ use Ameax\ApiLogger\Outbound\OutboundApiLogger;
 use Ameax\ApiLogger\Outbound\OutboundFilterService;
 use Ameax\ApiLogger\Outbound\Psr18ClientFactory;
 use Ameax\ApiLogger\Outbound\ServiceDetector;
+use Ameax\ApiLogger\Outbound\ServiceRegistry;
 use Ameax\ApiLogger\Services\DataSanitizer;
 use Ameax\ApiLogger\Services\FilterService;
 use Ameax\ApiLogger\Services\RequestCapture;
@@ -238,6 +239,14 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
             );
 
             return;
+        }
+
+        // Auto-register services from config
+        $serviceConfigs = config('apilogger.features.outbound.services.configs', []);
+        foreach ($serviceConfigs as $serviceClass => $serviceConfig) {
+            if (class_exists($serviceClass) && ! ServiceRegistry::isRegistered($serviceClass)) {
+                ServiceRegistry::register($serviceClass, $serviceConfig);
+            }
         }
 
         // Auto-register middleware for all Guzzle clients if configured
