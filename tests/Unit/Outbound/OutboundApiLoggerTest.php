@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ameax\ApiLogger\Tests\Unit\Outbound;
 
+use Ameax\ApiLogger\Contracts\StorageInterface;
 use Ameax\ApiLogger\DataTransferObjects\LogEntry;
 use Ameax\ApiLogger\Outbound\OutboundApiLogger;
 use Ameax\ApiLogger\Outbound\OutboundFilterService;
@@ -94,7 +95,7 @@ it('logs successful responses', function () {
         ->once()
         ->andReturn([]);
 
-    $storageInstance = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storageInstance = Mockery::mock(StorageInterface::class);
     $this->storageManager->shouldReceive('store')
         ->once()
         ->andReturn($storageInstance);
@@ -136,7 +137,7 @@ it('logs error responses', function () {
         ->once()
         ->andReturn([]);
 
-    $storageInstance = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storageInstance = Mockery::mock(StorageInterface::class);
     $this->storageManager->shouldReceive('store')
         ->once()
         ->andReturn($storageInstance);
@@ -169,7 +170,7 @@ it('logs exceptions without response', function () {
         ->once()
         ->andReturn([]);
 
-    $storageInstance = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storageInstance = Mockery::mock(StorageInterface::class);
     $this->storageManager->shouldReceive('store')
         ->once()
         ->andReturn($storageInstance);
@@ -300,7 +301,7 @@ it('handles multipart headers correctly', function () {
         ->once()
         ->andReturn([]);
 
-    $storageInstance = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storageInstance = Mockery::mock(StorageInterface::class);
     $this->storageManager->shouldReceive('store')
         ->once()
         ->andReturn($storageInstance);
@@ -325,7 +326,7 @@ it('preserves request and response body streams', function () {
         ->once()
         ->andReturn([]);
 
-    $storageInstance = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storageInstance = Mockery::mock(StorageInterface::class);
     $this->storageManager->shouldReceive('store')
         ->once()
         ->andReturn($storageInstance);

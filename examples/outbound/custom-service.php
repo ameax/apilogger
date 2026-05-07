@@ -97,7 +97,7 @@ try {
         ],
     ]);
     echo "Payment intent created (fully logged)\n";
-} catch (\Exception $e) {
+} catch (Exception $e) {
     echo 'Payment error (logged with full details): '.$e->getMessage()."\n";
 }
 
@@ -113,7 +113,7 @@ try {
     $weather = json_decode($response->getBody(), true);
     echo "Weather in London: {$weather['weather'][0]['description']}\n";
     echo "(Only logged if response time > 500ms)\n";
-} catch (\Exception $e) {
+} catch (Exception $e) {
     echo 'Weather API error: '.$e->getMessage()."\n";
 }
 
@@ -122,7 +122,7 @@ try {
     // This request will NOT be logged at all
     $response = $secureClient->get('/api/sensitive-data');
     echo "Sensitive data retrieved (not logged)\n";
-} catch (\Exception $e) {
+} catch (Exception $e) {
     echo 'Secure API error (not logged): '.$e->getMessage()."\n";
 }
 

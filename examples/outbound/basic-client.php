@@ -53,13 +53,14 @@ try {
     echo "\nAll requests have been logged to the database!\n";
     echo "Check your api_logs table to see the logged requests.\n";
 
-} catch (\GuzzleHttp\Exception\GuzzleException $e) {
+} catch (GuzzleException $e) {
     echo 'Error: '.$e->getMessage()."\n";
     echo "This error has also been logged.\n";
 }
 
 // Query the logs to see what was captured
 use Ameax\ApiLogger\Models\ApiLog;
+use GuzzleHttp\Exception\GuzzleException;
 
 echo "\n--- Recent Outbound Logs ---\n";
 $logs = ApiLog::outbound()

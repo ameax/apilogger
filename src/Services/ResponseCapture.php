@@ -21,7 +21,7 @@ class ResponseCapture
     /**
      * Capture response data from an HTTP response.
      *
-     * @param  Response|\Illuminate\Http\JsonResponse|\Symfony\Component\HttpFoundation\Response  $response
+     * @param  Response|JsonResponse|\Symfony\Component\HttpFoundation\Response  $response
      * @return array<string, mixed>
      */
     public function capture($response, float $startTime): array

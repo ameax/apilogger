@@ -360,7 +360,7 @@ class LogApiRequests
     /**
      * Set a custom filter callback.
      */
-    public function filter(\Closure $callback): self
+    public function filter(Closure $callback): self
     {
         $this->filterService->addCustomFilter($callback);
 

@@ -9,6 +9,7 @@ use Ameax\ApiLogger\DataTransferObjects\LogEntry;
 use Ameax\ApiLogger\Storage\DatabaseStorage;
 use Ameax\ApiLogger\Storage\JsonLineStorage;
 use Ameax\ApiLogger\StorageManager;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 
@@ -377,7 +378,7 @@ describe('StorageManager', function () {
             responseHeaders: [],
             responseBody: null,
             responseTimeMs: 10.0,
-            createdAt: \Carbon\Carbon::now()->subDays(10),
+            createdAt: Carbon::now()->subDays(10),
         );
 
         $fallback->store($oldEntry);

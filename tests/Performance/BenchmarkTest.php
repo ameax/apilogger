@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Ameax\ApiLogger\Tests\Performance;
 
+use Ameax\ApiLogger\DataTransferObjects\LogEntry;
 use Ameax\ApiLogger\Middleware\LogApiRequests;
 use Ameax\ApiLogger\Models\ApiLog;
+use Ameax\ApiLogger\StorageManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 
 uses(RefreshDatabase::class);
 
@@ -57,12 +60,12 @@ it('handles batch operations efficiently', function () {
         'apilogger.performance.batch_size' => 100,
     ]);
 
-    $storage = app(\Ameax\ApiLogger\StorageManager::class)->driver();
+    $storage = app(StorageManager::class)->driver();
     $entries = collect();
 
     // Create a large batch of log entries
     for ($i = 0; $i < 500; $i++) {
-        $entries->push(new \Ameax\ApiLogger\DataTransferObjects\LogEntry(
+        $entries->push(new LogEntry(
             requestId: 'batch-'.$i,
             method: 'GET',
             endpoint: '/api/batch/'.$i,
@@ -103,7 +106,7 @@ it('efficiently cleans old logs', function () {
         $log->save();
     }
 
-    $storage = app(\Ameax\ApiLogger\StorageManager::class)->driver();
+    $storage = app(StorageManager::class)->driver();
 
     $startTime = microtime(true);
     $cleaned = $storage->clean(30, 35); // Keep 30 days for normal, 35 for errors
@@ -133,7 +136,7 @@ it('retrieves logs with criteria efficiently', function () {
         ]);
     }
 
-    $storage = app(\Ameax\ApiLogger\StorageManager::class)->driver();
+    $storage = app(StorageManager::class)->driver();
 
     // Test various retrieval scenarios
     $scenarios = [
@@ -149,7 +152,7 @@ it('retrieves logs with criteria efficiently', function () {
         $results = $storage->retrieve($criteria, 100);
         $duration = (microtime(true) - $startTime) * 1000;
 
-        expect($results)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+        expect($results)->toBeInstanceOf(Collection::class);
         expect($duration)->toBeLessThan(500); // Each query should be fast
     }
 });
@@ -161,13 +164,13 @@ it('handles concurrent writes without data loss', function () {
         'apilogger.storage.jsonline.path' => storage_path('logs/api-concurrent'),
     ]);
 
-    $storage = app(\Ameax\ApiLogger\StorageManager::class)->driver();
+    $storage = app(StorageManager::class)->driver();
     $concurrentWrites = 50;
     $successCount = 0;
 
     // Simulate concurrent writes
     for ($i = 0; $i < $concurrentWrites; $i++) {
-        $entry = new \Ameax\ApiLogger\DataTransferObjects\LogEntry(
+        $entry = new LogEntry(
             requestId: 'concurrent-'.$i,
             method: 'GET',
             endpoint: '/api/concurrent/'.$i,

@@ -19,6 +19,7 @@ use Ameax\ApiLogger\Services\FilterService;
 use Ameax\ApiLogger\Services\RequestCapture;
 use Ameax\ApiLogger\Services\ResponseCapture;
 use Ameax\ApiLogger\Support\CorrelationIdManager;
+use GuzzleHttp\Client;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Log;
@@ -232,7 +233,7 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
     protected function registerOutboundLogging(): void
     {
         // Check if Guzzle is available
-        if (! class_exists(\GuzzleHttp\Client::class)) {
+        if (! class_exists(Client::class)) {
             Log::warning(
                 'ApiLogger: Outbound logging is enabled but Guzzle is not installed. '.
                 'Please install guzzlehttp/guzzle to use outbound API logging.'

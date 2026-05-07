@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Ameax\ApiLogger\Models\ApiLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 
@@ -65,7 +66,7 @@ it('creates indexes for performance', function () {
 
 it('creates correct column types and defaults', function () {
     // Test that columns have correct default values
-    $log = \Ameax\ApiLogger\Models\ApiLog::create([
+    $log = ApiLog::create([
         'method' => 'GET',
         'endpoint' => '/api/test',
         'response_code' => 200,

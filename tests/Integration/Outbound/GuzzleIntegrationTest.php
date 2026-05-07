@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Ameax\ApiLogger\Tests\Integration\Outbound;
 
+use Ameax\ApiLogger\Contracts\StorageInterface;
 use Ameax\ApiLogger\Outbound\GuzzleLoggerMiddleware;
 use Ameax\ApiLogger\Outbound\OutboundApiLogger;
 use Ameax\ApiLogger\Outbound\OutboundFilterService;
@@ -40,7 +41,7 @@ it('can log outbound requests through the full stack', function () {
     $capturedEntries = [];
 
     // Create a mock storage that captures entries
-    $storageMock = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storageMock = Mockery::mock(StorageInterface::class);
     $storageMock->shouldReceive('store')
         ->andReturnUsing(function ($entry) use (&$capturedEntries) {
             $capturedEntries[] = $entry;
@@ -93,7 +94,7 @@ it('can log outbound requests through the full stack', function () {
 it('sanitizes sensitive data in outbound requests', function () {
     $capturedEntries = [];
 
-    $storageMock = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storageMock = Mockery::mock(StorageInterface::class);
     $storageMock->shouldReceive('store')
         ->andReturnUsing(function ($entry) use (&$capturedEntries) {
             $capturedEntries[] = $entry;

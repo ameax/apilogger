@@ -13,6 +13,7 @@ use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Http\Message\StreamInterface;
 
 /**
  * PSR-18 HTTP Client decorator that logs requests and responses.
@@ -115,7 +116,7 @@ class Psr18LoggerMiddleware implements ClientInterface, HttpClient
         if ($body !== null) {
             if (is_string($body)) {
                 $stream = $this->streamFactory->createStream($body);
-            } elseif ($body instanceof \Psr\Http\Message\StreamInterface) {
+            } elseif ($body instanceof StreamInterface) {
                 $stream = $body;
             } else {
                 $stream = $this->streamFactory->createStream((string) $body);

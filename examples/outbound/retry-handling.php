@@ -139,7 +139,7 @@ class CircuitBreaker
         // Check if circuit is open
         if (self::isOpen($service)) {
             echo "  - Circuit is OPEN for {$service}. Skipping call.\n";
-            throw new \Exception("Circuit breaker is open for {$service}");
+            throw new Exception("Circuit breaker is open for {$service}");
         }
 
         try {
@@ -148,7 +148,7 @@ class CircuitBreaker
             echo "  - Circuit is CLOSED. Call succeeded.\n";
 
             return $result;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             self::onFailure($service);
 
             if (self::isOpen($service)) {
@@ -210,7 +210,7 @@ for ($i = 1; $i <= 5; $i++) {
             return $unreliableClient->get('https://httpstat.us/500?sleep=100');
         });
         echo "  - Success!\n";
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         echo '  - Failed: '.substr($e->getMessage(), 0, 50)."...\n";
     }
     sleep(1);
@@ -232,7 +232,7 @@ $urls = ['/posts/1', '/posts/2', '/posts/999', '/users/1'];
 foreach ($urls as $url) {
     try {
         $testClient->get($url);
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         // Ignore errors for this example
     }
 }
