@@ -8,6 +8,7 @@ use Ameax\ApiLogger\Casts\JsonCast;
 use Ameax\ApiLogger\DataTransferObjects\LogEntry;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -84,6 +85,7 @@ class ApiLog extends Model
         'metadata',
         'comment',
         'is_marked',
+        'created_at',
     ];
 
     /**
@@ -426,12 +428,12 @@ class ApiLog extends Model
     /**
      * Get all related logs in the same correlation chain.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, ApiLog>
+     * @return Collection<int, ApiLog>
      */
     public function getCorrelationChain()
     {
         if (! $this->correlation_identifier) {
-            $collection = new \Illuminate\Database\Eloquent\Collection;
+            $collection = new Collection;
             $collection->push($this);
 
             return $collection;

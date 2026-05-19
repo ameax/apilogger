@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Ameax\ApiLogger\Tests\Integration;
 
 use Ameax\ApiLogger\ApiLogger;
+use Ameax\ApiLogger\DataTransferObjects\LogEntry;
 use Ameax\ApiLogger\Middleware\LogApiRequests;
 use Ameax\ApiLogger\Models\ApiLog;
+use Ameax\ApiLogger\StorageManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Http\UploadedFile;
 
 uses(RefreshDatabase::class);
 
@@ -185,7 +188,7 @@ it('handles different content types correctly', function () {
     // File upload request
     $fileRequest = Request::create('/api/upload', 'POST');
     $fileRequest->headers->set('Content-Type', 'multipart/form-data');
-    $fileRequest->files->set('file', new \Illuminate\Http\UploadedFile(
+    $fileRequest->files->set('file', new UploadedFile(
         __FILE__,
         'test.txt',
         'text/plain',
@@ -218,8 +221,8 @@ it('maintains data integrity across storage backends', function () {
 
     // Store in database
     config(['apilogger.storage.driver' => 'database']);
-    $dbStorage = app(\Ameax\ApiLogger\StorageManager::class)->driver();
-    $logEntry = new \Ameax\ApiLogger\DataTransferObjects\LogEntry(
+    $dbStorage = app(StorageManager::class)->driver();
+    $logEntry = new LogEntry(
         requestId: $testData['correlation_identifier'],
         method: $testData['method'],
         endpoint: $testData['endpoint'],

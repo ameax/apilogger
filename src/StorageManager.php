@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Ameax\ApiLogger;
 
 use Ameax\ApiLogger\Contracts\StorageInterface;
+use Ameax\ApiLogger\DataTransferObjects\LogEntry;
 use Ameax\ApiLogger\Storage\DatabaseStorage;
 use Ameax\ApiLogger\Storage\JsonLineStorage;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Manager;
 
 class StorageManager extends Manager
@@ -204,7 +206,7 @@ class StorageManager extends Manager
                 private bool $stopOnSuccess
             ) {}
 
-            public function store(\Ameax\ApiLogger\DataTransferObjects\LogEntry $entry): bool
+            public function store(LogEntry $entry): bool
             {
                 $success = false;
 
@@ -225,7 +227,7 @@ class StorageManager extends Manager
                 return $success;
             }
 
-            public function storeBatch(\Illuminate\Support\Collection $entries): int
+            public function storeBatch(Collection $entries): int
             {
                 $maxStored = 0;
 
@@ -247,7 +249,7 @@ class StorageManager extends Manager
                 return $maxStored;
             }
 
-            public function retrieve(array $criteria = [], int $limit = 100, int $offset = 0): \Illuminate\Support\Collection
+            public function retrieve(array $criteria = [], int $limit = 100, int $offset = 0): Collection
             {
                 foreach ($this->drivers as $driver) {
                     try {
@@ -260,10 +262,10 @@ class StorageManager extends Manager
                     }
                 }
 
-                return new \Illuminate\Support\Collection;
+                return new Collection;
             }
 
-            public function findByRequestId(string $requestId): ?\Ameax\ApiLogger\DataTransferObjects\LogEntry
+            public function findByRequestId(string $requestId): ?LogEntry
             {
                 foreach ($this->drivers as $driver) {
                     try {

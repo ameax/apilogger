@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Ameax\ApiLogger\Contracts\StorageInterface;
 use Ameax\ApiLogger\DataTransferObjects\LogEntry;
 use Ameax\ApiLogger\Jobs\StoreApiLogJob;
 use Ameax\ApiLogger\StorageManager;
@@ -26,7 +27,7 @@ it('stores log entry via storage manager', function () {
     ];
 
     $storageManager = Mockery::mock(StorageManager::class);
-    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storage = Mockery::mock(StorageInterface::class);
 
     $storageManager->shouldReceive('driver')->once()->andReturn($storage);
     $storage->shouldReceive('store')->once()->with(Mockery::on(function ($logEntry) {
@@ -55,10 +56,10 @@ it('retries on failure with backoff', function () {
     ];
 
     $storageManager = Mockery::mock(StorageManager::class);
-    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storage = Mockery::mock(StorageInterface::class);
 
     $storageManager->shouldReceive('driver')->andReturn($storage);
-    $storage->shouldReceive('store')->andThrow(new \Exception('Storage failed'));
+    $storage->shouldReceive('store')->andThrow(new Exception('Storage failed'));
 
     // Create a partial mock of the job to mock attempts() and release()
     $job = Mockery::mock(StoreApiLogJob::class.'[attempts,release,fail]', [$logData]);
@@ -104,7 +105,7 @@ it('logs critical error when permanently failed', function () {
     }
 
     $job = new StoreApiLogJob($logData);
-    $exception = new \Exception('Permanent failure');
+    $exception = new Exception('Permanent failure');
 
     $job->failed($exception);
 
@@ -136,7 +137,7 @@ it('attempts fallback storage on permanent failure', function () {
     }
 
     $job = new StoreApiLogJob($logData);
-    $job->failed(new \Exception('Storage failed'));
+    $job->failed(new Exception('Storage failed'));
 
     expect(file_exists($filePath))->toBeTrue();
 

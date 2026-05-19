@@ -13,11 +13,13 @@ use Ameax\ApiLogger\Outbound\OutboundApiLogger;
 use Ameax\ApiLogger\Outbound\OutboundFilterService;
 use Ameax\ApiLogger\Outbound\Psr18ClientFactory;
 use Ameax\ApiLogger\Outbound\ServiceDetector;
+use Ameax\ApiLogger\Outbound\ServiceRegistry;
 use Ameax\ApiLogger\Services\DataSanitizer;
 use Ameax\ApiLogger\Services\FilterService;
 use Ameax\ApiLogger\Services\RequestCapture;
 use Ameax\ApiLogger\Services\ResponseCapture;
 use Ameax\ApiLogger\Support\CorrelationIdManager;
+use GuzzleHttp\Client;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Log;
@@ -231,13 +233,21 @@ class ApiLoggerServiceProvider extends PackageServiceProvider
     protected function registerOutboundLogging(): void
     {
         // Check if Guzzle is available
-        if (! class_exists(\GuzzleHttp\Client::class)) {
+        if (! class_exists(Client::class)) {
             Log::warning(
                 'ApiLogger: Outbound logging is enabled but Guzzle is not installed. '.
                 'Please install guzzlehttp/guzzle to use outbound API logging.'
             );
 
             return;
+        }
+
+        // Auto-register services from config
+        $serviceConfigs = config('apilogger.features.outbound.services.configs', []);
+        foreach ($serviceConfigs as $serviceClass => $serviceConfig) {
+            if (class_exists($serviceClass) && ! ServiceRegistry::isRegistered($serviceClass)) {
+                ServiceRegistry::register($serviceClass, $serviceConfig);
+            }
         }
 
         // Auto-register middleware for all Guzzle clients if configured

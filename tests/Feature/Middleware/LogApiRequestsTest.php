@@ -2,9 +2,14 @@
 
 declare(strict_types=1);
 
+use Ameax\ApiLogger\Contracts\StorageInterface;
 use Ameax\ApiLogger\DataTransferObjects\LogEntry;
 use Ameax\ApiLogger\Jobs\StoreApiLogJob;
 use Ameax\ApiLogger\Middleware\LogApiRequests;
+use Ameax\ApiLogger\Services\DataSanitizer;
+use Ameax\ApiLogger\Services\FilterService;
+use Ameax\ApiLogger\Services\RequestCapture;
+use Ameax\ApiLogger\Services\ResponseCapture;
 use Ameax\ApiLogger\StorageManager;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -20,7 +25,7 @@ beforeEach(function () {
 
 it('captures request and response data', function () {
     $storageManager = Mockery::mock(StorageManager::class);
-    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storage = Mockery::mock(StorageInterface::class);
 
     $storageManager->shouldReceive('driver')->andReturn($storage);
     $storage->shouldReceive('store')->once()->with(Mockery::on(function ($logEntry) {
@@ -56,7 +61,7 @@ it('captures request and response data', function () {
 
 it('sanitizes sensitive data before logging', function () {
     $storageManager = Mockery::mock(StorageManager::class);
-    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storage = Mockery::mock(StorageInterface::class);
 
     $storageManager->shouldReceive('driver')->andReturn($storage);
     $storage->shouldReceive('store')->once()->with(Mockery::on(function ($logEntry) {
@@ -98,7 +103,7 @@ it('respects route filters', function () {
     config(['apilogger.filters.exclude_routes' => ['health/*']]);
 
     $storageManager = Mockery::mock(StorageManager::class);
-    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storage = Mockery::mock(StorageInterface::class);
 
     $storageManager->shouldReceive('driver')->andReturn($storage);
     $storage->shouldNotReceive('store');
@@ -119,7 +124,7 @@ it('respects method filters', function () {
     config(['apilogger.filters.exclude_methods' => ['OPTIONS']]);
 
     $storageManager = Mockery::mock(StorageManager::class);
-    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storage = Mockery::mock(StorageInterface::class);
 
     $storageManager->shouldReceive('driver')->andReturn($storage);
     $storage->shouldNotReceive('store');
@@ -140,7 +145,7 @@ it('respects status code filters', function () {
     config(['apilogger.filters.exclude_status_codes' => [304]]);
 
     $storageManager = Mockery::mock(StorageManager::class);
-    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storage = Mockery::mock(StorageInterface::class);
 
     $storageManager->shouldReceive('driver')->andReturn($storage);
     $storage->shouldNotReceive('store');
@@ -161,7 +166,7 @@ it('respects response time filter', function () {
     config(['apilogger.filters.min_response_time' => 1000]); // 1 second
 
     $storageManager = Mockery::mock(StorageManager::class);
-    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storage = Mockery::mock(StorageInterface::class);
 
     $storageManager->shouldReceive('driver')->andReturn($storage);
     $storage->shouldNotReceive('store'); // Fast response should not be logged
@@ -183,7 +188,7 @@ it('always logs errors when configured', function () {
     config(['apilogger.filters.exclude_routes' => ['error/*']]);
 
     $storageManager = Mockery::mock(StorageManager::class);
-    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storage = Mockery::mock(StorageInterface::class);
 
     $storageManager->shouldReceive('driver')->andReturn($storage);
     $storage->shouldReceive('store')->once(); // Should log despite route filter
@@ -224,7 +229,7 @@ it('uses queue when configured', function () {
 
 it('handles exceptions during request processing', function () {
     $storageManager = Mockery::mock(StorageManager::class);
-    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storage = Mockery::mock(StorageInterface::class);
 
     $storageManager->shouldReceive('driver')->andReturn($storage);
     $storage->shouldReceive('store')->once()->with(Mockery::on(function ($logEntry) {
@@ -242,24 +247,24 @@ it('handles exceptions during request processing', function () {
 
     $request = Request::create('/api/error', 'GET');
     $next = function ($req) {
-        throw new \RuntimeException('Something went wrong');
+        throw new RuntimeException('Something went wrong');
     };
 
     expect(fn () => $middleware->handle($request, $next))
-        ->toThrow(\RuntimeException::class, 'Something went wrong');
+        ->toThrow(RuntimeException::class, 'Something went wrong');
 });
 
 it('circuit breaker opens after threshold failures', function () {
     $middleware = new LogApiRequests(
         app(StorageManager::class),
-        app(\Ameax\ApiLogger\Services\DataSanitizer::class),
-        app(\Ameax\ApiLogger\Services\FilterService::class),
-        app(\Ameax\ApiLogger\Services\RequestCapture::class),
-        app(\Ameax\ApiLogger\Services\ResponseCapture::class),
+        app(DataSanitizer::class),
+        app(FilterService::class),
+        app(RequestCapture::class),
+        app(ResponseCapture::class),
         config('apilogger')
     );
 
-    $reflection = new \ReflectionClass($middleware);
+    $reflection = new ReflectionClass($middleware);
 
     // Check initial state
     $method = $reflection->getMethod('isCircuitBreakerOpen');
@@ -286,7 +291,7 @@ it('circuit breaker opens after threshold failures', function () {
 it('circuit breaker prevents storage after threshold failures', function () {
     // Create mocked dependencies first
     $storageManager = Mockery::mock(StorageManager::class);
-    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storage = Mockery::mock(StorageInterface::class);
 
     // Storage should never be called because circuit breaker will be open
     $storage->shouldNotReceive('store');
@@ -296,15 +301,15 @@ it('circuit breaker prevents storage after threshold failures', function () {
     // Create middleware with mocked storage
     $middleware = new LogApiRequests(
         $storageManager,
-        app(\Ameax\ApiLogger\Services\DataSanitizer::class),
-        app(\Ameax\ApiLogger\Services\FilterService::class),
-        app(\Ameax\ApiLogger\Services\RequestCapture::class),
-        app(\Ameax\ApiLogger\Services\ResponseCapture::class),
+        app(DataSanitizer::class),
+        app(FilterService::class),
+        app(RequestCapture::class),
+        app(ResponseCapture::class),
         config('apilogger')
     );
 
     // Simulate circuit breaker being open
-    $reflection = new \ReflectionClass($middleware);
+    $reflection = new ReflectionClass($middleware);
 
     $failureCountProperty = $reflection->getProperty('failureCount');
     $failureCountProperty->setAccessible(true);
@@ -340,7 +345,7 @@ it('implements circuit breaker pattern for storage failures', function () {
     config(['apilogger.filters.exclude_routes' => []]);
     config(['apilogger.filters.include_routes' => []]);
     $storageManager = Mockery::mock(StorageManager::class);
-    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storage = Mockery::mock(StorageInterface::class);
 
     // Allow driver to be called
     $storageManager->shouldReceive('driver')->andReturn($storage);
@@ -352,7 +357,7 @@ it('implements circuit breaker pattern for storage failures', function () {
         ->andReturnUsing(function () use (&$callCount) {
             $callCount++;
             // Always throw for testing circuit breaker
-            throw new \Exception('Storage failed '.$callCount);
+            throw new Exception('Storage failed '.$callCount);
         });
 
     // Allow Log calls
@@ -369,10 +374,10 @@ it('implements circuit breaker pattern for storage failures', function () {
 
     $middleware = new LogApiRequests(
         $storageManager, // Use mocked storage manager
-        app(\Ameax\ApiLogger\Services\DataSanitizer::class),
-        app(\Ameax\ApiLogger\Services\FilterService::class),
-        app(\Ameax\ApiLogger\Services\RequestCapture::class),
-        app(\Ameax\ApiLogger\Services\ResponseCapture::class),
+        app(DataSanitizer::class),
+        app(FilterService::class),
+        app(RequestCapture::class),
+        app(ResponseCapture::class),
         $config
     );
 
@@ -390,7 +395,7 @@ it('implements circuit breaker pattern for storage failures', function () {
     expect($callCount)->toBeGreaterThan(0);
 
     // Check circuit breaker state after 5 failures
-    $reflection = new \ReflectionClass($middleware);
+    $reflection = new ReflectionClass($middleware);
     $circuitBreakerOpenProperty = $reflection->getProperty('circuitBreakerOpen');
     $circuitBreakerOpenProperty->setAccessible(true);
     $isOpen = $circuitBreakerOpenProperty->getValue($middleware);
@@ -425,7 +430,7 @@ it('does not log when disabled', function () {
     config(['apilogger.enabled' => false]);
 
     $storageManager = Mockery::mock(StorageManager::class);
-    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storage = Mockery::mock(StorageInterface::class);
 
     $storageManager->shouldReceive('driver')->andReturn($storage);
     $storage->shouldNotReceive('store');
@@ -446,7 +451,7 @@ it('does not capture body when level is not full', function () {
     config(['apilogger.level' => 'basic']);
 
     $storageManager = Mockery::mock(StorageManager::class);
-    $storage = Mockery::mock(\Ameax\ApiLogger\Contracts\StorageInterface::class);
+    $storage = Mockery::mock(StorageInterface::class);
 
     $storageManager->shouldReceive('driver')->andReturn($storage);
     $storage->shouldReceive('store')->once()->with(Mockery::on(function ($logEntry) {

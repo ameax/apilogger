@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Ameax\ApiLogger\ApiLoggerServiceProvider;
 use Ameax\ApiLogger\Middleware\LogApiRequests;
+use GuzzleHttp\Client;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
@@ -136,7 +137,7 @@ describe('Service Provider Feature Registration', function () {
 
     it('logs warning when outbound is enabled but Guzzle is not installed', function () {
         // Skip this test if Guzzle is actually installed (which it likely is in dev)
-        if (class_exists(\GuzzleHttp\Client::class)) {
+        if (class_exists(Client::class)) {
             $this->markTestSkipped('Guzzle is installed, cannot test warning message');
 
             return;
@@ -149,7 +150,7 @@ describe('Service Provider Feature Registration', function () {
         // Mock Log facade to capture warning
         Log::shouldReceive('warning')
             ->once()
-            ->with(\Mockery::pattern('/Guzzle is not installed/'));
+            ->with(Mockery::pattern('/Guzzle is not installed/'));
 
         // Register the service provider which should trigger the warning
         $this->app->register(ApiLoggerServiceProvider::class);

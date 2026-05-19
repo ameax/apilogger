@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Ameax\ApiLogger\Outbound;
 
+use Ameax\ApiLogger\Contracts\OutboundLoggerInterface;
 use Ameax\ApiLogger\Support\CorrelationIdManager;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use Illuminate\Support\Facades\App;
@@ -33,7 +35,7 @@ class GuzzleHandlerStackFactory
         }
 
         // Get the outbound logger
-        $logger = App::make(\Ameax\ApiLogger\Contracts\OutboundLoggerInterface::class);
+        $logger = App::make(OutboundLoggerInterface::class);
 
         // Create correlation ID manager if enabled
         $correlationIdManager = null;
@@ -109,7 +111,7 @@ class GuzzleHandlerStackFactory
             }
 
             // Retry on connection exceptions
-            if ($exception instanceof \GuzzleHttp\Exception\ConnectException) {
+            if ($exception instanceof ConnectException) {
                 return true;
             }
 
